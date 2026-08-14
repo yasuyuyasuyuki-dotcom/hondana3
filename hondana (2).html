@@ -1,0 +1,1914 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#ffffff">
+  <title>hondana - デジタル読書記録＆本棚</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --wood-light: #e5e5e5;
+      --wood-dark: #d4d4d4;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f9fafb;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    
+    input, textarea, .floating-phrase-text, .selectable-text {
+      -webkit-user-select: auto;
+      user-select: auto;
+    }
+
+    .font-serif-jp { font-family: 'Noto Serif JP', serif; }
+    
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* 本棚のスタイル */
+    .shelf-row {
+      position: relative;
+      margin-bottom: 2rem;
+      min-height: 180px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-start;
+      padding: 0 1rem 0.5rem 1rem;
+      border-bottom: 12px solid var(--wood-light);
+      box-shadow: inset 0 -4px 6px -4px rgba(0,0,0,0.1), 0 4px 6px -1px rgba(0,0,0,0.05);
+    }
+    .shelf-row::after {
+      content: '';
+      position: absolute;
+      bottom: -12px;
+      left: 0;
+      right: 0;
+      height: 12px;
+      background: var(--wood-dark);
+      z-index: -1;
+    }
+
+    .book-item-cover {
+      perspective: 1000px;
+      margin-right: -10px;
+      transition: transform 0.3s ease, margin 0.3s ease;
+      cursor: pointer;
+    }
+    .book-item-cover:hover {
+      transform: translateY(-10px) translateZ(20px);
+      margin-right: 5px;
+      margin-left: 5px;
+      z-index: 10;
+    }
+    .book-shadow {
+      box-shadow: 
+        -2px 0 5px rgba(0,0,0,0.1),
+        5px 5px 15px rgba(0,0,0,0.15),
+        inset 2px 0 3px rgba(255,255,255,0.3);
+    }
+    .book-spine-hint {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: linear-gradient(to right, rgba(255,255,255,0.6), rgba(255,255,255,0));
+      border-radius: 4px 0 0 4px;
+      z-index: 2;
+    }
+
+    .book-item-spine {
+      position: relative;
+      cursor: pointer;
+      margin-right: 2px;
+      background-color: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-left: 2px solid #f3f4f6;
+      border-right: 2px solid #e5e7eb;
+      box-shadow: 
+        inset 3px 0 5px rgba(255,255,255,0.8),
+        inset -2px 0 3px rgba(0,0,0,0.02),
+        2px 2px 5px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding-top: 12px;
+      transition: transform 0.2s ease, filter 0.2s ease;
+      border-radius: 3px;
+    }
+    
+    .book-item-spine:hover {
+      transform: translateY(-5px);
+      z-index: 20;
+    }
+
+    .book-item-spine::before, .book-item-spine::after {
+      content: '';
+      position: absolute;
+      left: 4px;
+      right: 4px;
+      height: 2px;
+      background: rgba(0,0,0,0.05);
+      border-radius: 50%;
+    }
+    .book-item-spine::before { top: 0; }
+    .book-item-spine::after { bottom: 0; }
+
+    .spine-title {
+      writing-mode: vertical-rl;
+      text-orientation: upright;
+      font-family: 'Noto Serif JP', serif;
+      font-size: 12px;
+      color: #111827;
+      letter-spacing: 2px;
+      font-weight: 500;
+      max-height: 85%;
+      overflow: hidden;
+      margin-top: 4px;
+      text-shadow: 0.5px 0.5px 0px rgba(255,255,255,0.8);
+    }
+
+    .spine-hover-cover {
+      position: absolute;
+      bottom: 110%;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      width: 100px;
+      height: 140px;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 4px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+      z-index: 30;
+      pointer-events: none;
+    }
+    .book-item-spine:hover .spine-hover-cover {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* モーダル等アニメーション */
+    .modal-enter { opacity: 0; transform: scale(0.95) translateY(10px); }
+    .modal-enter-active { opacity: 1; transform: scale(1) translateY(0); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    .modal-exit { opacity: 1; transform: scale(1) translateY(0); }
+    .modal-exit-active { opacity: 0; transform: scale(0.95) translateY(10px); transition: all 0.2s ease-in; }
+
+    .toast-enter { transform: translateY(100%); opacity: 0; }
+    .toast-enter-active { transform: translateY(0); opacity: 1; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    .toast-exit { transform: translateY(0); opacity: 1; }
+    .toast-exit-active { transform: translateY(100%); opacity: 0; transition: all 0.2s ease-in; }
+    
+    /* 背景スタイル */
+    .bg-space {
+      background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+    }
+    .bg-serendipity {
+      background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+    }
+    
+    #map-container { touch-action: none; }
+
+    /* セレンディピティ フレーズカード */
+    .floating-phrase {
+      position: absolute;
+      top: 0; left: 0;
+      width: max-content;
+      max-width: 400px;
+      padding: 1.25rem 1.5rem;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+      cursor: pointer;
+      will-change: transform;
+      z-index: 10;
+      transition: box-shadow 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+    }
+    .floating-phrase:hover {
+      z-index: 50 !important;
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.15);
+      border-color: rgba(99, 102, 241, 0.3);
+    }
+    .floating-phrase-text {
+      font-family: 'Noto Serif JP', serif;
+      font-size: 0.9rem;
+      color: #1f2937;
+      line-height: 1.8;
+      font-weight: 400;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .floating-phrase-meta {
+      font-size: 0.65rem;
+      color: #6b7280;
+      text-align: right;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 4px;
+      max-height: 0;
+      opacity: 0;
+      margin-top: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.3s ease, margin-top 0.3s ease;
+    }
+    .floating-phrase:hover .floating-phrase-meta {
+      max-height: 30px;
+      opacity: 1;
+      margin-top: 0.75rem;
+    }
+    
+    .suggestions-scroll::-webkit-scrollbar { width: 6px; }
+    .suggestions-scroll::-webkit-scrollbar-track { background: transparent; }
+    .suggestions-scroll::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 3px; }
+  </style>
+
+  <script>
+    /* STREAMING_CHUNK:Initializing PWA setup... */
+    (function initPWA() {
+      const manifestJSON = {
+        "name": "hondana - デジタル読書記録",
+        "short_name": "hondana",
+        "start_url": ".",
+        "display": "standalone",
+        "background_color": "#f9fafb",
+        "theme_color": "#ffffff",
+        "icons": [
+          { "src": "https://placehold.co/192x192/111827/ffffff?text=h", "sizes": "192x192", "type": "image/png" },
+          { "src": "https://placehold.co/512x512/111827/ffffff?text=h", "sizes": "512x512", "type": "image/png" }
+        ]
+      };
+      const manifestBlob = new Blob([JSON.stringify(manifestJSON)], { type: 'application/manifest+json' });
+      const manifestURL = URL.createObjectURL(manifestBlob);
+      const link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = manifestURL;
+      document.head.appendChild(link);
+    })();
+  </script>
+</head>
+<body class="min-h-screen flex flex-col text-gray-800">
+
+  <!-- Header -->
+  <header class="bg-white/85 backdrop-blur-md border-b border-gray-100 sticky top-0 z-30 pt-safe">
+    <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <h1 class="text-xl font-bold tracking-tight text-gray-900">hondana</h1>
+      </div>
+      <div class="flex items-center gap-3">
+        <!-- ログインボタングループ -->
+        <div id="auth-container" class="flex items-center gap-2 mr-1">
+          <button id="btn-login" class="text-xs font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 px-3 py-1.5 rounded-full transition shadow-sm flex items-center gap-1.5">
+            <i class="ph-fill ph-google-logo text-gray-700"></i> <span class="hidden sm:inline">ログイン</span>
+          </button>
+          
+          <div id="user-info" class="hidden items-center gap-2">
+            <img id="user-avatar" src="" alt="User Avatar" class="w-8 h-8 rounded-full border border-gray-200 object-cover">
+            <button id="btn-logout" class="text-xs text-gray-500 hover:text-gray-900 transition" title="ログアウト">
+              <i class="ph ph-sign-out text-lg"></i>
+            </button>
+          </div>
+        </div>
+
+        <button id="btn-share" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition" title="共有">
+          <i class="ph ph-share-network text-lg"></i>
+        </button>
+        <button id="btn-add-book" class="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-full text-sm font-medium transition shadow-sm">
+          <i class="ph ph-plus-bold"></i> <span class="hidden sm:inline">本を追加</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-5xl mx-auto w-full px-4 py-6 flex flex-col">
+    
+    <!-- Navigation Tabs -->
+    <div class="flex gap-6 mb-6 border-b border-gray-100 overflow-x-auto no-scrollbar">
+      <button id="tab-bookshelf" class="pb-3 text-sm font-medium text-gray-900 border-b-2 border-gray-900 transition -mb-[1px] whitespace-nowrap">Bookshelf</button>
+      <button id="tab-phrases" class="pb-3 text-sm font-medium text-gray-400 hover:text-gray-900 border-b-2 border-transparent transition -mb-[1px] whitespace-nowrap">Phrases</button>
+      <button id="tab-mapping" class="pb-3 text-sm font-medium text-gray-400 hover:text-gray-900 border-b-2 border-transparent transition -mb-[1px] whitespace-nowrap"><i class="ph ph-planet text-base align-middle"></i> Knowledge Map</button>
+      <button id="tab-serendipity" class="pb-3 text-sm font-medium text-gray-400 hover:text-gray-900 border-b-2 border-transparent transition -mb-[1px] whitespace-nowrap"><i class="ph ph-sparkle text-base align-middle"></i> Serendipity</button>
+    </div>
+
+    <!-- Bookshelf View -->
+    <div id="view-bookshelf" class="flex-1 flex flex-col">
+      <div class="flex flex-col gap-3 mb-6 border-b border-gray-100 pb-3">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div class="flex gap-4">
+            <button class="filter-btn active text-sm font-medium text-gray-900 border-b-2 border-gray-900 pb-2 -mb-[13px]" data-filter="all">すべて <span id="count-all" class="ml-1 text-xs text-gray-500">0</span></button>
+            <button class="filter-btn text-sm font-medium text-gray-400 hover:text-gray-900 border-b-2 border-transparent pb-2 -mb-[13px] transition" data-filter="read">読了 <span id="count-read" class="ml-1 text-xs text-gray-400">0</span></button>
+            <button class="filter-btn text-sm font-medium text-gray-400 hover:text-gray-900 border-b-2 border-transparent pb-2 -mb-[13px] transition" data-filter="reading">読書中 <span id="count-reading" class="ml-1 text-xs text-gray-400">0</span></button>
+            <button class="filter-btn text-sm font-medium text-gray-400 hover:text-gray-900 border-b-2 border-transparent pb-2 -mb-[13px] transition" data-filter="wish">読みたい <span id="count-wish" class="ml-1 text-xs text-gray-400">0</span></button>
+          </div>
+          
+          <div class="flex items-center gap-2">
+            <div class="flex bg-gray-100 rounded-lg p-1 mr-2">
+              <button id="btn-view-spine" class="w-8 h-8 flex items-center justify-center rounded-md bg-white shadow-sm text-gray-900 transition" title="背表紙ビュー">
+                <i class="ph ph-books text-lg"></i>
+              </button>
+              <button id="btn-view-cover" class="w-8 h-8 flex items-center justify-center rounded-md text-gray-400 hover:text-gray-900 transition" title="表紙ビュー">
+                <i class="ph ph-squares-four text-lg"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pt-2 pb-1" id="genre-tabs-container"></div>
+      </div>
+
+      <div id="bookshelf-container" class="flex-1 pb-20 flex flex-col"></div>
+
+      <div id="empty-state" class="hidden flex-col items-center justify-center py-20 text-center">
+        <i class="ph ph-books text-4xl text-gray-300 mb-4"></i>
+        <h2 class="text-lg font-medium text-gray-900 mb-2">本棚は空です</h2>
+        <p class="text-sm text-gray-500 mb-6 max-w-md font-serif-jp">右上から本を追加して<br>あなたの本棚を作り始めましょう。</p>
+      </div>
+    </div>
+
+    <!-- Phrases View -->
+    <div id="view-phrases" class="hidden flex-1 flex-col pb-20">
+      <div id="phrase-form-container" class="mb-6 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
+        <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><i class="ph-fill ph-quotes text-lg text-indigo-500"></i> 新しいフレーズを記録</h3>
+        <form id="phrase-form" class="flex flex-col gap-3" onsubmit="return false;">
+          <div class="flex flex-col sm:flex-row gap-3">
+            <select id="phrase-book-select" class="flex-1 bg-gray-50 border-none rounded-lg p-3 text-sm focus:ring-2 focus:ring-gray-200 outline-none text-gray-700 font-medium">
+              <option value="">書籍を選択 (任意)</option>
+            </select>
+            <input type="number" id="phrase-page" placeholder="ページ数" class="w-full sm:w-32 bg-gray-50 border-none rounded-lg p-3 text-sm focus:ring-2 focus:ring-gray-200 outline-none text-gray-700">
+          </div>
+          <div class="flex flex-col sm:flex-row gap-3 items-end">
+            <textarea id="phrase-text" placeholder="心に残ったフレーズや引用を入力..." class="flex-1 w-full bg-gray-50 border-none rounded-lg p-3 text-sm focus:ring-2 focus:ring-gray-200 outline-none text-gray-800 resize-none font-serif-jp h-24 leading-relaxed" required></textarea>
+            <button type="submit" id="btn-add-phrase" class="w-full sm:w-auto bg-gray-900 hover:bg-gray-800 text-white px-6 py-3 rounded-lg text-sm font-medium transition whitespace-nowrap shadow-sm h-12 flex items-center justify-center gap-2">
+              <i class="ph ph-plus-bold"></i> 記録する
+            </button>
+          </div>
+        </form>
+      </div>
+      
+      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar mb-4" id="phrases-genre-tabs-container"></div>
+      <div id="phrases-list" class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6"></div>
+      <div id="phrases-empty-state" class="hidden flex-col items-center justify-center py-16 text-center">
+        <i class="ph ph-quotes text-4xl text-gray-300 mb-3"></i>
+        <p class="text-sm text-gray-500 font-serif-jp" id="phrases-empty-message">まだフレーズが記録されていません。</p>
+      </div>
+    </div>
+
+    <!-- Mapping View (思考の星座) -->
+    <div id="view-mapping" class="hidden flex-1 flex-col h-[calc(100vh-200px)] min-h-[500px]">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+        <p class="text-sm text-gray-500 hidden md:block">本と本を線で結び、あなただけの「思考の星座」を描きましょう。</p>
+        <div class="flex items-center gap-2 ml-auto w-full sm:w-auto justify-end">
+          <button id="btn-export-map" class="text-sm font-medium px-4 py-2 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-1.5 shadow-sm whitespace-nowrap">
+            <i class="ph ph-download-simple text-lg"></i> <span class="hidden sm:inline">画像保存</span>
+          </button>
+          <button id="btn-connect-mode" class="text-sm font-medium px-4 py-2 rounded-full bg-slate-800 text-white hover:bg-slate-700 transition flex items-center gap-2 whitespace-nowrap shadow-sm">
+            <i class="ph ph-git-merge text-lg"></i> <span>Connect: OFF</span>
+          </button>
+        </div>
+      </div>
+      <!-- 宇宙空間風の背景 -->
+      <div id="map-container" class="relative flex-1 bg-space rounded-2xl overflow-auto shadow-inner border border-slate-800 cursor-grab">
+        <div id="map-content" class="relative min-w-[1000px] min-h-[600px] p-8">
+          <div id="map-grid" class="absolute inset-0 pointer-events-none"></div>
+          <svg id="map-svg" class="absolute inset-0 w-full h-full pointer-events-none"></svg>
+          <div id="map-nodes" class="absolute inset-0 w-full h-full pointer-events-none"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Serendipity View (セレンディピティ空間) -->
+    <div id="view-serendipity" class="hidden flex-1 flex-col h-[calc(100vh-200px)] min-h-[500px] relative overflow-hidden bg-serendipity rounded-2xl border border-gray-100 shadow-inner">
+      <!-- 線を描画するためのCanvas -->
+      <canvas id="serendipity-canvas" class="absolute inset-0 w-full h-full z-0 pointer-events-none"></canvas>
+      <div id="serendipity-container" class="absolute inset-0 w-full h-full z-10"></div>
+      
+      <div id="serendipity-empty-state" class="hidden absolute inset-0 flex-col items-center justify-center text-center z-20">
+        <i class="ph ph-sparkle text-4xl text-gray-300 mb-3"></i>
+        <p class="text-sm text-gray-500 font-serif-jp mb-2">まだフレーズが記録されていません。</p>
+        <p class="text-xs text-gray-400">フレーズを追加して、インスピレーションの海を漂わせましょう。</p>
+      </div>
+      <div class="absolute bottom-4 right-4 z-30 pointer-events-none">
+         <span class="text-xs font-medium text-indigo-500 bg-white/80 px-2.5 py-1.5 rounded-md backdrop-blur border border-indigo-100 shadow-sm flex items-center gap-1.5"><i class="ph-fill ph-magic-wand text-indigo-400"></i> Serendipity Space</span>
+      </div>
+    </div>
+  </main>
+
+  <!-- Book Detail & Add Modal -->
+  <div id="modal-detail" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex-col items-center pt-10 pb-10 px-4 overflow-y-auto">
+    <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col min-h-[500px] modal-enter relative my-auto" id="modal-detail-content">
+      <button id="btn-close-detail" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100/80 text-gray-500 hover:bg-gray-200 transition z-10">
+        <i class="ph ph-x text-lg"></i>
+      </button>
+
+      <div class="flex flex-col md:flex-row h-full">
+        <!-- Left -->
+        <div class="w-full md:w-2/5 bg-gray-50 p-6 flex flex-col items-center border-r border-gray-100 rounded-l-2xl relative z-10">
+          <div class="w-32 md:w-40 aspect-[2/3] bg-white rounded-md shadow-md mb-4 relative group cursor-pointer" id="detail-cover-wrapper">
+            <img id="detail-cover" src="" alt="Cover" class="w-full h-full object-cover rounded-md">
+            <div class="absolute inset-0 bg-black/50 rounded-md opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+              <i class="ph ph-pencil-simple text-white text-2xl"></i>
+            </div>
+          </div>
+          
+          <div id="cover-edit-container" class="w-full mb-4 hidden">
+            <label class="block text-xs font-medium text-gray-500 mb-1">表紙画像URL</label>
+            <input type="text" id="detail-cover-url" class="w-full bg-white border border-gray-200 rounded-lg p-2 text-xs focus:ring-2 focus:ring-gray-200 outline-none text-gray-700" placeholder="https://...">
+          </div>
+
+          <div class="w-full mb-3 relative">
+            <label class="block text-xs font-medium text-gray-400 mb-1">タイトル <span class="text-[10px] text-indigo-400 font-normal ml-1">(サジェスト検索対応)</span></label>
+            <input type="text" id="detail-title-input" placeholder="書籍名を入力..." autocomplete="off" class="w-full bg-white border border-gray-200 rounded-lg p-2 text-sm font-bold text-gray-900 font-serif-jp focus:ring-2 focus:ring-gray-200 outline-none">
+            
+            <div id="title-suggestions" class="absolute z-[60] top-full left-0 w-full mt-1 bg-white border border-gray-100 rounded-lg shadow-xl max-h-60 overflow-y-auto hidden suggestions-scroll"></div>
+          </div>
+
+          <div class="w-full mb-4">
+            <label class="block text-xs font-medium text-gray-400 mb-1">著者名</label>
+            <input type="text" id="detail-author-input" class="w-full bg-white border border-gray-200 rounded-lg p-2 text-sm text-gray-700 focus:ring-2 focus:ring-gray-200 outline-none">
+          </div>
+
+          <div class="w-full flex flex-col gap-3">
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1">Status</label>
+              <select id="detail-status" class="w-full bg-white border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-gray-200 outline-none text-gray-700 font-medium">
+                <option value="read">読了</option>
+                <option value="reading">読書中</option>
+                <option value="wish">読みたい</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right -->
+        <div class="w-full md:w-3/5 p-6 flex flex-col relative z-0">
+          <div class="flex-1 flex flex-col space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-medium text-gray-400 mb-1">Start Date</label>
+                <input type="date" id="detail-start-date" class="w-full bg-gray-50 border-none rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-gray-200 outline-none text-gray-700">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-400 mb-1">End Date</label>
+                <input type="date" id="detail-end-date" class="w-full bg-gray-50 border-none rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-gray-200 outline-none text-gray-700">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-medium text-gray-400 mb-1">Genre / Category</label>
+                <input type="text" id="detail-genre" placeholder="例: 小説, ビジネス, 哲学..." class="w-full bg-gray-50 border-none rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-gray-200 outline-none text-gray-700">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-400 mb-1">総ページ数</label>
+                <input type="number" id="detail-pages" placeholder="例: 250" class="w-full bg-gray-50 border-none rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-gray-200 outline-none text-gray-700">
+              </div>
+            </div>
+            
+            <div class="flex items-center justify-between pt-3 border-t border-gray-100 mb-1">
+              <label class="block text-xs font-medium text-gray-400">Review & Memo</label>
+              <div class="flex items-center gap-1 text-lg text-gray-300" id="detail-rating-stars"></div>
+              <input type="hidden" id="detail-rating" value="0">
+            </div>
+
+            <div class="flex-1 flex flex-col">
+              <textarea id="detail-memo" class="flex-1 w-full bg-gray-50 border-none rounded-lg p-3 text-sm focus:ring-2 focus:ring-gray-200 outline-none text-gray-800 resize-none font-serif-jp min-h-[150px]" placeholder="感想や心に残ったフレーズを記録..."></textarea>
+            </div>
+          </div>
+
+          <div class="mt-6 flex gap-3 pt-4 border-t border-gray-100" id="detail-actions">
+            <button id="btn-delete-book" class="px-4 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 transition">削除</button>
+            <div class="flex-1"></div>
+            <button id="btn-save-book" class="px-6 py-2 rounded-lg bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium transition shadow-sm">保存</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <script type="module">
+    /* STREAMING_CHUNK:Firebase & App Initialization... */
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    const generateId = () => Math.random().toString(36).substr(2, 9);
+    const escapeHtml = (unsafe) => {
+      if(!unsafe) return '';
+      return unsafe.toString()
+           .replace(/&/g, "&amp;")
+           .replace(/</g, "&lt;")
+           .replace(/>/g, "&gt;")
+           .replace(/"/g, "&quot;")
+           .replace(/'/g, "&#039;");
+    };
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const icon = type === 'success' ? '<i class="ph-fill ph-check-circle text-green-500 text-lg"></i>' : 
+                   (type === 'ai' ? '<i class="ph-fill ph-sparkle text-indigo-500 text-lg"></i>' : '<i class="ph-fill ph-warning-circle text-red-500 text-lg"></i>');
+      
+      toast.className = `flex items-center gap-2 bg-white px-4 py-3 rounded-xl shadow-lg border border-gray-100 text-sm font-medium text-gray-800 toast-enter pointer-events-auto z-50`;
+      toast.innerHTML = `${icon} <span>${escapeHtml(message)}</span>`;
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('toast-enter');
+        toast.classList.add('toast-enter-active');
+      });
+
+      setTimeout(() => {
+        toast.classList.remove('toast-enter-active');
+        toast.classList.add('toast-exit');
+        requestAnimationFrame(() => toast.classList.add('toast-exit-active'));
+        setTimeout(() => toast.remove(), 200);
+      }, 3000);
+    }
+
+    const state = {
+      books: [],
+      links: [],
+      phrases: [],
+      currentFilter: 'all',
+      phrasesFilter: 'all',
+      selectedBookId: null,
+      isPortfolioMode: false,
+      viewMode: 'spine',
+      activeTab: 'bookshelf',
+      isConnectMode: false,
+      connectSourceId: null
+    };
+
+    let serendipityReqId = null;
+    let floatingElements = [];
+
+    // ★★★ ここをご自身の Firebase Config に書き換えてください ★★★
+const firebaseConfig = {
+  apiKey: "AIzaSyCDQX0UKzhphBOX7-tfFINgvCVIQa9qyw4",
+  authDomain: "hondana-aa5c1.firebaseapp.com",
+  projectId: "hondana-aa5c1",
+  storageBucket: "hondana-aa5c1.firebasestorage.app",
+  messagingSenderId: "700740460084",
+  appId: "1:700740460084:web:67835a45372862deb4b461",
+  measurementId: "G-M5FDTEZN1T"
+};
+
+    let app, db, auth, currentUser;
+    const provider = new GoogleAuthProvider();
+
+    async function initApp() {
+      try {
+        app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+
+        // 認証状態の監視
+        onAuthStateChanged(auth, async (user) => {
+          if (user) {
+            currentUser = user;
+            updateAuthUI(user);
+            await syncLocalToCloud(); // ローカルデータをクラウドに統合
+            await loadData();
+          } else {
+            currentUser = null;
+            updateAuthUI(null);
+            await loadData(); // ローカルデータのみを読み込む
+          }
+          renderBookshelf();
+        });
+
+      } catch (e) {
+        console.error("Firebase init error:", e);
+        // エラー時はローカルデータで起動
+        await loadData();
+        renderBookshelf();
+      }
+    }
+
+    // ログインボタンの処理
+    document.getElementById('btn-login').addEventListener('click', async () => {
+      try {
+        showToast('ログイン画面を開きます...', 'info');
+        await signInWithPopup(auth, provider);
+        showToast('ログインしました！', 'success');
+      } catch (error) {
+        console.error("Login failed", error);
+        showToast('ログインに失敗しました', 'error');
+      }
+    });
+
+    // ログアウトボタンの処理
+    document.getElementById('btn-logout').addEventListener('click', async () => {
+      try {
+        await signOut(auth);
+        showToast('ログアウトしました', 'info');
+        // 画面をリロードして状態をクリア
+        setTimeout(() => window.location.reload(), 1000);
+      } catch (error) {
+        showToast('ログアウトに失敗しました', 'error');
+      }
+    });
+
+    // ログイン状態に応じたUIの切り替え
+    function updateAuthUI(user) {
+      const btnLogin = document.getElementById('btn-login');
+      const userInfo = document.getElementById('user-info');
+      const userAvatar = document.getElementById('user-avatar');
+
+      if (user) {
+        btnLogin.classList.add('hidden');
+        userInfo.classList.remove('hidden');
+        userInfo.classList.add('flex');
+        userAvatar.src = user.photoURL || `https://placehold.co/100x100/e5e7eb/6b7280?text=${user.displayName ? encodeURIComponent(user.displayName.charAt(0)) : 'U'}`;
+        userAvatar.title = user.displayName || 'ユーザー';
+      } else {
+        btnLogin.classList.remove('hidden');
+        btnLogin.classList.add('flex');
+        userInfo.classList.add('hidden');
+        userInfo.classList.remove('flex');
+      }
+    }
+
+    // ローカル(未ログイン時)のデータを、ログイン後のクラウドアカウントにマージする
+    async function syncLocalToCloud() {
+      if (!currentUser || firebaseConfig.apiKey === "mock") return;
+
+      const localBooks = JSON.parse(localStorage.getItem('hondana_books') || '[]');
+      const localLinks = JSON.parse(localStorage.getItem('hondana_links') || '[]');
+      const localPhrases = JSON.parse(localStorage.getItem('hondana_phrases') || '[]');
+
+      if (localBooks.length === 0 && localPhrases.length === 0) return;
+
+      showToast('ローカルのデータを同期しています...', 'ai');
+
+      try {
+        // クラウドの既存データを取得
+        const booksRef = collection(db, 'users', currentUser.uid, 'books');
+        const cloudBooksSnap = await getDocs(booksRef);
+        const cloudBookIds = new Set(cloudBooksSnap.docs.map(d => d.id));
+
+        // 本棚の同期
+        for (const book of localBooks) {
+          if (!cloudBookIds.has(book.id)) {
+            await setDoc(doc(db, 'users', currentUser.uid, 'books', book.id), book);
+          }
+        }
+
+        // フレーズの同期
+        for (const phrase of localPhrases) {
+          await setDoc(doc(db, 'users', currentUser.uid, 'phrases', phrase.id), phrase);
+        }
+
+        // リンクの同期
+        for (const link of localLinks) {
+          await setDoc(doc(db, 'users', currentUser.uid, 'links', `${link.source}_${link.target}`), link);
+        }
+
+        // 同期完了後はローカルをクリアして重複を防ぐ
+        localStorage.removeItem('hondana_books');
+        localStorage.removeItem('hondana_links');
+        localStorage.removeItem('hondana_phrases');
+        
+        showToast('同期が完了しました！', 'success');
+      } catch(e) {
+        console.error("Sync error", e);
+      }
+    }
+
+    /* STREAMING_CHUNK:Data Loading Logic... */
+    async function loadData() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const portfolioId = urlParams.get('portfolio');
+      
+      // ポートフォリオ（共有）モード
+      if (portfolioId) {
+        state.isPortfolioMode = true;
+        document.getElementById('btn-add-book').classList.add('hidden');
+        document.getElementById('btn-share').classList.add('hidden');
+        document.getElementById('auth-container').classList.add('hidden');
+        
+        try {
+          if(!db || firebaseConfig.apiKey === "mock") throw new Error("DB not init");
+          const docRef = doc(db, 'portfolios', portfolioId);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            state.books = data.books || [];
+            state.links = data.links || [];
+            state.phrases = data.phrases || [];
+          } else {
+            showToast('ポートフォリオが見つかりません', 'error');
+          }
+        } catch (e) {
+          // モックやエラー時のフォールバック
+          showToast('共有データを読み込めませんでした。ローカルデータを表示します。', 'info');
+          loadLocalData();
+        }
+      } 
+      // ログインユーザーモード
+      else if (currentUser && firebaseConfig.apiKey !== "mock") {
+        try {
+          const booksRef = collection(db, 'users', currentUser.uid, 'books');
+          const booksSnap = await getDocs(booksRef);
+          state.books = booksSnap.docs.map(d => d.data());
+          
+          const linksRef = collection(db, 'users', currentUser.uid, 'links');
+          const linksSnap = await getDocs(linksRef);
+          state.links = linksSnap.docs.map(d => d.data());
+          
+          const phrasesRef = collection(db, 'users', currentUser.uid, 'phrases');
+          const phrasesSnap = await getDocs(phrasesRef);
+          state.phrases = phrasesSnap.docs.map(d => d.data());
+        } catch(e) {
+          console.error("Failed to load cloud data", e);
+          loadLocalData();
+        }
+      } 
+      // ゲスト（未ログイン）モード
+      else {
+        loadLocalData();
+      }
+    }
+
+    function loadLocalData() {
+      const savedBooks = localStorage.getItem('hondana_books');
+      if (savedBooks) {
+        state.books = JSON.parse(savedBooks);
+      } else {
+        // 初回表示用のモックデータ
+        const now = new Date();
+        const thisYear = now.getFullYear();
+        const thisMonth = String(now.getMonth() + 1).padStart(2, '0');
+        const lastMonth = String(now.getMonth() === 0 ? 12 : now.getMonth()).padStart(2, '0');
+        const lastMonthYear = now.getMonth() === 0 ? thisYear - 1 : thisYear;
+
+        state.books = [
+          { id: generateId(), title: "サピエンス全史", author: "ユヴァル・ノア・ハラリ", coverUrl: "https://books.google.com/books/content?id=v-00EAAAQBAJ&printsec=frontcover&img=1&zoom=1", pages: 500, status: "read", rating: 5, memo: "認知革命という概念が視点を変えてくれた。", startDate: `${lastMonthYear}-${lastMonth}-01`, endDate: `${lastMonthYear}-${lastMonth}-20`, addedAt: Date.now() - 86400000*30, genre: "歴史・思想" },
+          { id: generateId(), title: "星の王子さま", author: "サン＝テグジュペリ", coverUrl: "https://books.google.com/books/content?id=s6e5DwAAQBAJ&printsec=frontcover&img=1&zoom=1", pages: 150, status: "read", rating: 5, memo: "「大切なものは目に見えない」。大人になってから読むと全く違う本に感じる。", startDate: `${thisYear}-${thisMonth}-01`, endDate: `${thisYear}-${thisMonth}-03`, addedAt: Date.now(), genre: "文学" }
+        ];
+      }
+      
+      const savedLinks = localStorage.getItem('hondana_links');
+      if (savedLinks) state.links = JSON.parse(savedLinks);
+
+      const savedPhrases = localStorage.getItem('hondana_phrases');
+      if (savedPhrases) state.phrases = JSON.parse(savedPhrases);
+    }
+
+    async function saveBookToCloud(book) {
+      saveDataLocal();
+      if(state.isPortfolioMode || !db || !currentUser || firebaseConfig.apiKey === "mock") return;
+      try { await setDoc(doc(db, 'users', currentUser.uid, 'books', book.id), book); } catch(e) {}
+    }
+    async function saveLinkToCloud(link) {
+      saveDataLocal();
+      if(state.isPortfolioMode || !db || !currentUser || firebaseConfig.apiKey === "mock") return;
+      try { await setDoc(doc(db, 'users', currentUser.uid, 'links', `${link.source}_${link.target}`), link); } catch(e) {}
+    }
+    async function savePhraseToCloud(phrase) {
+      saveDataLocal();
+      if(state.isPortfolioMode || !db || !currentUser || firebaseConfig.apiKey === "mock") return;
+      try { await setDoc(doc(db, 'users', currentUser.uid, 'phrases', phrase.id), phrase); } catch(e) {}
+    }
+    async function deletePhraseFromCloud(id) {
+      saveDataLocal();
+      if(state.isPortfolioMode || !db || !currentUser || firebaseConfig.apiKey === "mock") return;
+      try { await deleteDoc(doc(db, 'users', currentUser.uid, 'phrases', id)); } catch(e) {}
+    }
+    async function deleteLinkFromCloud(link) {
+      saveDataLocal();
+      if(state.isPortfolioMode || !db || !currentUser || firebaseConfig.apiKey === "mock") return;
+      try { await deleteDoc(doc(db, 'users', currentUser.uid, 'links', `${link.source}_${link.target}`)); } catch(e) {}
+    }
+    async function deleteBookFromCloud(id) {
+      saveDataLocal();
+      if(state.isPortfolioMode || !db || !currentUser || firebaseConfig.apiKey === "mock") return;
+      try { await deleteDoc(doc(db, 'users', currentUser.uid, 'books', id)); } catch(e) {}
+    }
+    
+    // 未ログイン時はローカルストレージにも保存する
+    function saveDataLocal() {
+      if (!currentUser) {
+        localStorage.setItem('hondana_books', JSON.stringify(state.books));
+        localStorage.setItem('hondana_links', JSON.stringify(state.links));
+        localStorage.setItem('hondana_phrases', JSON.stringify(state.phrases));
+      }
+    }
+
+    /* STREAMING_CHUNK:Bookshelf Rendering... */
+    function renderBookshelf() {
+      const container = document.getElementById('bookshelf-container');
+      const emptyState = document.getElementById('empty-state');
+      
+      const counts = { all: state.books.length, read: 0, reading: 0, wish: 0 };
+      state.books.forEach(b => { if(counts[b.status] !== undefined) counts[b.status]++; });
+      
+      document.getElementById('count-all').innerText = counts.all;
+      document.getElementById('count-read').innerText = counts.read;
+      document.getElementById('count-reading').innerText = counts.reading;
+      document.getElementById('count-wish').innerText = counts.wish;
+      
+      let filteredBooks = [...state.books];
+      if(state.currentFilter !== 'all') {
+        filteredBooks = filteredBooks.filter(b => b.status === state.currentFilter);
+      }
+      
+      filteredBooks.sort((a, b) => {
+        const timeA = a.startDate ? new Date(a.startDate).getTime() : (a.addedAt || 0);
+        const timeB = b.startDate ? new Date(b.startDate).getTime() : (b.addedAt || 0);
+        return timeA - timeB;
+      });
+
+      const genreContainer = document.getElementById('genre-tabs-container');
+      if (genreContainer) {
+        const genres = [...new Set(state.books.map(b => b.genre || '未分類'))].sort();
+        genreContainer.innerHTML = '';
+        genres.forEach(g => {
+          const btn = document.createElement('button');
+          btn.className = 'px-3 py-1 bg-gray-100 text-gray-600 hover:bg-gray-200 text-xs rounded-full whitespace-nowrap transition';
+          btn.innerText = g;
+          btn.onclick = () => showToast(`「${g}」で絞り込みました`);
+          genreContainer.appendChild(btn);
+        });
+      }
+      
+      container.innerHTML = '';
+      if(filteredBooks.length === 0) {
+        emptyState.classList.remove('hidden');
+        emptyState.classList.add('flex');
+        return;
+      }
+      emptyState.classList.add('hidden');
+      emptyState.classList.remove('flex');
+      
+      const booksPerRow = window.innerWidth > 768 ? 6 : window.innerWidth > 480 ? 4 : 3;
+      for (let i = 0; i < filteredBooks.length; i += booksPerRow) {
+        const rowBooks = filteredBooks.slice(i, i + booksPerRow);
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'shelf-row';
+        
+        rowBooks.forEach(book => {
+          const bookEl = document.createElement('div');
+          const fallbackImg = `https://placehold.co/120x180/f3f4f6/9ca3af?text=${encodeURIComponent(book.title.substring(0,2))}`;
+          
+          if (state.viewMode === 'cover') {
+            bookEl.className = 'book-item-cover flex flex-col items-center relative';
+            bookEl.innerHTML = `
+              <div class="relative w-20 sm:w-28 aspect-[2/3] rounded-sm book-shadow transition-transform duration-300 bg-white">
+                <div class="book-spine-hint"></div>
+                <img src="${escapeHtml(book.coverUrl) || fallbackImg}" onerror="this.src='${fallbackImg}'" class="w-full h-full object-cover rounded-sm border border-black/10">
+              </div>
+            `;
+          } else {
+            const pages = parseInt(book.pages) || 250;
+            const thickness = Math.max(14, Math.min(80, pages / 6));
+            
+            const hash = Math.abs(book.id.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0));
+            const height = 125 + (hash % 30);
+            
+            bookEl.className = 'book-item-spine flex-shrink-0';
+            bookEl.style.width = `${thickness}px`;
+            bookEl.style.height = `${height}px`;
+            
+            bookEl.innerHTML = `
+              <div class="spine-title">${escapeHtml(book.title)}</div>
+              <div class="spine-hover-cover">
+                <img src="${escapeHtml(book.coverUrl) || fallbackImg}" onerror="this.src='${fallbackImg}'" class="w-full h-full object-cover rounded shadow-lg">
+              </div>
+            `;
+          }
+          
+          bookEl.addEventListener('click', () => window.openBookDetail(book.id));
+          rowDiv.appendChild(bookEl);
+        });
+        container.appendChild(rowDiv);
+      }
+    }
+
+    /* STREAMING_CHUNK:Modal and Interaction Logic... */
+    window.openBookDetail = function(id) {
+      const book = state.books.find(b => b.id === id);
+      if(!book) return;
+      state.selectedBookId = id;
+      
+      document.getElementById('detail-title-input').value = book.title || '';
+      document.getElementById('detail-author-input').value = book.author || '';
+      document.getElementById('detail-cover').src = book.coverUrl || `https://placehold.co/120x180/f3f4f6/9ca3af?text=${encodeURIComponent((book.title || '本').substring(0,2))}`;
+      document.getElementById('detail-cover-url').value = book.coverUrl || '';
+      document.getElementById('detail-status').value = book.status || 'read';
+      document.getElementById('detail-rating').value = book.rating || 0;
+      document.getElementById('detail-memo').value = book.memo || '';
+      document.getElementById('detail-start-date').value = book.startDate || '';
+      document.getElementById('detail-end-date').value = book.endDate || '';
+      document.getElementById('detail-genre').value = book.genre || '';
+      document.getElementById('detail-pages').value = book.pages || '';
+      
+      updateStars(book.rating || 0);
+      document.getElementById('btn-delete-book').classList.remove('hidden');
+      document.getElementById('title-suggestions').classList.add('hidden');
+      
+      const modal = document.getElementById('modal-detail');
+      const content = document.getElementById('modal-detail-content');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      
+      requestAnimationFrame(() => {
+        content.classList.add('modal-enter-active');
+        content.classList.remove('modal-exit', 'modal-exit-active');
+      });
+    };
+
+    window.openNewBookModal = function() {
+      state.selectedBookId = null;
+      
+      document.getElementById('detail-title-input').value = '';
+      document.getElementById('detail-author-input').value = '';
+      document.getElementById('detail-cover').src = 'https://placehold.co/120x180/f3f4f6/9ca3af?text=New';
+      document.getElementById('detail-cover-url').value = '';
+      document.getElementById('detail-status').value = 'wish';
+      document.getElementById('detail-rating').value = 0;
+      document.getElementById('detail-memo').value = '';
+      document.getElementById('detail-start-date').value = '';
+      document.getElementById('detail-end-date').value = '';
+      document.getElementById('detail-genre').value = '';
+      document.getElementById('detail-pages').value = '';
+      
+      updateStars(0);
+      document.getElementById('btn-delete-book').classList.add('hidden');
+      document.getElementById('title-suggestions').classList.add('hidden');
+      
+      const modal = document.getElementById('modal-detail');
+      const content = document.getElementById('modal-detail-content');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      
+      requestAnimationFrame(() => {
+        content.classList.add('modal-enter-active');
+        content.classList.remove('modal-exit', 'modal-exit-active');
+      });
+    };
+
+    function updateStars(rating) {
+      const container = document.getElementById('detail-rating-stars');
+      container.innerHTML = '';
+      for (let i = 1; i <= 5; i++) {
+        const star = document.createElement('i');
+        star.className = i <= rating ? 'ph-fill ph-star text-yellow-400 cursor-pointer' : 'ph ph-star text-gray-300 cursor-pointer';
+        star.addEventListener('click', () => {
+          if(state.isPortfolioMode) return;
+          document.getElementById('detail-rating').value = i;
+          updateStars(i);
+        });
+        container.appendChild(star);
+      }
+    }
+
+    function closeModal(modalId) {
+      const modal = document.getElementById(modalId);
+      const content = document.getElementById(modalId + '-content');
+      
+      if (content) {
+        content.classList.remove('modal-enter-active');
+        content.classList.add('modal-exit-active');
+        setTimeout(() => {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+          content.classList.remove('modal-exit-active');
+        }, 200);
+      } else {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    document.getElementById('btn-close-detail').addEventListener('click', () => closeModal('modal-detail'));
+    
+    document.getElementById('btn-add-book').addEventListener('click', () => {
+       window.openNewBookModal();
+    });
+
+    document.getElementById('btn-view-spine').addEventListener('click', () => {
+      state.viewMode = 'spine';
+      renderBookshelf();
+    });
+    document.getElementById('btn-view-cover').addEventListener('click', () => {
+      state.viewMode = 'cover';
+      renderBookshelf();
+    });
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.filter-btn').forEach(b => {
+          b.classList.remove('text-gray-900', 'border-gray-900', 'active');
+          b.classList.add('text-gray-400', 'border-transparent');
+        });
+        e.currentTarget.classList.remove('text-gray-400', 'border-transparent');
+        e.currentTarget.classList.add('text-gray-900', 'border-gray-900', 'active');
+        state.currentFilter = e.currentTarget.getAttribute('data-filter');
+        renderBookshelf();
+      });
+    });
+
+    let searchTimeout = null;
+    let searchController = null;
+    const searchCache = new Map();
+    const titleInput = document.getElementById('detail-title-input');
+    const suggestionsBox = document.getElementById('title-suggestions');
+
+    titleInput.addEventListener('input', (e) => {
+      if (state.isPortfolioMode) return;
+      
+      const query = e.target.value.trim();
+      
+      if (query.length < 2) {
+        suggestionsBox.classList.add('hidden');
+        return;
+      }
+
+      clearTimeout(searchTimeout);
+      
+      searchTimeout = setTimeout(async () => {
+        if (searchCache.has(query)) {
+          renderSuggestions(searchCache.get(query));
+          return;
+        }
+
+        if (searchController) {
+          searchController.abort();
+        }
+        searchController = new AbortController();
+
+        try {
+          suggestionsBox.innerHTML = '<div class="p-3 text-xs text-gray-400 text-center flex items-center justify-center gap-2"><i class="ph ph-spinner animate-spin text-lg"></i> 検索中...</div>';
+          suggestionsBox.classList.remove('hidden');
+
+          const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=6`, {
+            signal: searchController.signal
+          });
+          const data = await response.json();
+          
+          if (data.items && data.items.length > 0) {
+            searchCache.set(query, data.items);
+            renderSuggestions(data.items);
+          } else {
+            searchCache.set(query, []);
+            suggestionsBox.innerHTML = '<div class="p-3 text-xs text-gray-400 text-center">見つかりませんでした</div>';
+          }
+        } catch(err) {
+          if (err.name !== 'AbortError') {
+             suggestionsBox.classList.add('hidden');
+          }
+        }
+      }, 800);
+    });
+
+    function renderSuggestions(items) {
+      if (!items || items.length === 0) {
+        suggestionsBox.innerHTML = '<div class="p-3 text-xs text-gray-400 text-center">見つかりませんでした</div>';
+        return;
+      }
+      
+      suggestionsBox.innerHTML = '';
+      items.forEach(item => {
+        const vol = item.volumeInfo;
+        const bookTitle = vol.title || '不明なタイトル';
+        const author = vol.authors ? vol.authors.join(', ') : '不明な著者';
+        
+        let coverUrl = '';
+        if (vol.imageLinks) {
+          coverUrl = vol.imageLinks.thumbnail || vol.imageLinks.smallThumbnail || '';
+          if (coverUrl) {
+            coverUrl = coverUrl.replace('http:', 'https:');
+            coverUrl = coverUrl.replace('&edge=curl', '');
+          }
+        }
+
+        const pages = vol.pageCount || '';
+
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-3 p-3 border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition';
+        const fallbackImg = `https://placehold.co/40x60/f3f4f6/9ca3af?text=${encodeURIComponent(bookTitle.substring(0,1))}`;
+        
+        div.innerHTML = `
+          <img src="${coverUrl || fallbackImg}" class="w-8 h-12 object-cover rounded shadow-sm shrink-0" onerror="this.src='${fallbackImg}'">
+          <div class="flex-1 min-w-0 pointer-events-none">
+            <div class="font-bold text-sm text-gray-900 truncate">${escapeHtml(bookTitle)}</div>
+            <div class="text-xs text-gray-500 mt-1 truncate">${escapeHtml(author)}</div>
+          </div>
+        `;
+        
+        div.addEventListener('click', () => {
+          titleInput.value = bookTitle;
+          const authorInput = document.getElementById('detail-author-input');
+          const coverInputUrl = document.getElementById('detail-cover-url');
+          const pagesInput = document.getElementById('detail-pages');
+
+          if(!authorInput.value && author) authorInput.value = author;
+          if(!coverInputUrl.value && coverUrl) {
+            coverInputUrl.value = coverUrl;
+            document.getElementById('detail-cover').src = coverUrl;
+          }
+          if(!pagesInput.value && pages) pagesInput.value = pages;
+          
+          suggestionsBox.classList.add('hidden');
+          showToast('書籍情報を自動入力しました', 'success');
+        });
+        
+        suggestionsBox.appendChild(div);
+      });
+      suggestionsBox.classList.remove('hidden');
+    }
+
+    titleInput.addEventListener('blur', () => {
+      setTimeout(() => { suggestionsBox.classList.add('hidden'); }, 200);
+    });
+
+    titleInput.addEventListener('focus', () => {
+      if (suggestionsBox.innerHTML.trim() !== '' && titleInput.value.trim().length >= 2) {
+        suggestionsBox.classList.remove('hidden');
+      }
+    });
+
+    document.getElementById('btn-save-book').addEventListener('click', async () => {
+      if(state.isPortfolioMode) return;
+      
+      const title = document.getElementById('detail-title-input').value.trim();
+      if (!title) {
+          showToast('タイトルを入力してください', 'error');
+          return;
+      }
+
+      let book = state.books.find(b => b.id === state.selectedBookId);
+      const isNew = !book;
+
+      if (isNew) {
+          book = {
+              id: generateId(),
+              addedAt: Date.now()
+          };
+      }
+
+      book.title = title;
+      book.author = document.getElementById('detail-author-input').value.trim();
+      book.status = document.getElementById('detail-status').value;
+      book.rating = parseInt(document.getElementById('detail-rating').value);
+      book.memo = document.getElementById('detail-memo').value.trim();
+      book.coverUrl = document.getElementById('detail-cover-url').value.trim();
+      book.startDate = document.getElementById('detail-start-date').value;
+      book.endDate = document.getElementById('detail-end-date').value;
+      book.genre = document.getElementById('detail-genre').value.trim() || '未分類';
+      book.pages = parseInt(document.getElementById('detail-pages').value, 10) || 250;
+
+      if (isNew) {
+          state.books.push(book);
+      }
+
+      await saveBookToCloud(book);
+      renderBookshelf();
+      if(state.activeTab === 'mapping') renderMapping();
+      
+      closeModal('modal-detail');
+      showToast(isNew ? '本を追加しました' : '変更を保存しました');
+    });
+
+    document.getElementById('btn-delete-book').addEventListener('click', async () => {
+      if(state.isPortfolioMode) return;
+      if(!state.selectedBookId) return;
+      if(!confirm('本当に削除しますか？')) return;
+      
+      const bookId = state.selectedBookId;
+      state.books = state.books.filter(b => b.id !== bookId);
+      
+      const linksToDelete = state.links.filter(l => l.source === bookId || l.target === bookId);
+      state.links = state.links.filter(l => l.source !== bookId && l.target !== bookId);
+      
+      await deleteBookFromCloud(bookId);
+      for(let l of linksToDelete) {
+         await deleteLinkFromCloud(l);
+      }
+      
+      saveDataLocal();
+      renderBookshelf();
+      if(state.activeTab === 'mapping') renderMapping();
+      closeModal('modal-detail');
+      showToast('本を削除しました');
+    });
+
+    document.getElementById('detail-cover-wrapper').addEventListener('click', () => {
+       if(state.isPortfolioMode) return;
+       const input = document.getElementById('cover-edit-container');
+       input.classList.toggle('hidden');
+    });
+
+    /* STREAMING_CHUNK:Share and Tab Switching Logic... */
+    document.getElementById('btn-share').addEventListener('click', async () => {
+      if(state.books.length === 0) { showToast('共有する本がありません', 'error'); return; }
+      showToast('ポートフォリオを生成中...', 'ai');
+      try {
+        const id = generateId() + generateId();
+        // 共有用のポートフォリオデータ作成（クラウドが繋がっていなくてもモックDBならそのまま動くように見せる）
+        if (db && firebaseConfig.apiKey !== "mock") {
+          await setDoc(doc(db, 'portfolios', id), {
+              books: state.books, links: state.links, phrases: state.phrases, createdAt: Date.now()
+          });
+        }
+        
+        const url = window.location.href.split('?')[0] + '?portfolio=' + id;
+        
+        try {
+           const res = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(url)}`);
+           const data = await res.json();
+           if(data.shorturl) {
+               await navigator.clipboard.writeText(data.shorturl);
+               showToast('短い共有リンクをコピーしました！');
+               return;
+           }
+        } catch(e) {}
+        
+        await navigator.clipboard.writeText(url);
+        showToast('ポートフォリオのリンクをコピーしました！');
+      } catch(e) {
+        showToast('リンクの生成に失敗しました', 'error');
+      }
+    });
+
+    function switchTab(tabId) {
+      const tabs = ['bookshelf', 'mapping', 'phrases', 'serendipity'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tab-${t}`);
+        const view = document.getElementById(`view-${t}`);
+        if(t === tabId) {
+          btn.classList.add('text-gray-900', 'border-gray-900');
+          btn.classList.remove('text-gray-400', 'border-transparent');
+          view.classList.remove('hidden');
+          view.classList.add('flex');
+        } else {
+          btn.classList.remove('text-gray-900', 'border-gray-900');
+          btn.classList.add('text-gray-400', 'border-transparent');
+          view.classList.add('hidden');
+          view.classList.remove('flex');
+        }
+      });
+      state.activeTab = tabId;
+
+      if(tabId === 'serendipity') {
+         setTimeout(initSerendipityView, 50);
+      } else {
+         stopSerendipityAnimation();
+      }
+      
+      if(tabId === 'mapping') {
+         setTimeout(() => renderMapping(), 50);
+      }
+    }
+
+    document.getElementById('tab-bookshelf').addEventListener('click', () => switchTab('bookshelf'));
+    document.getElementById('tab-mapping').addEventListener('click', () => switchTab('mapping'));
+    
+    document.getElementById('tab-phrases').addEventListener('click', () => {
+      switchTab('phrases');
+      if (state.isPortfolioMode) {
+        document.getElementById('phrase-form-container').classList.add('hidden');
+      }
+      renderPhraseBookSelect();
+      renderPhrases();
+    });
+
+    document.getElementById('tab-serendipity').addEventListener('click', () => switchTab('serendipity'));
+
+    /* STREAMING_CHUNK:Phrases Logic... */
+    function renderPhraseBookSelect() {
+      const select = document.getElementById('phrase-book-select');
+      const currentVal = select.value;
+      select.innerHTML = '<option value="">書籍を選択 (任意)</option>';
+      
+      const sortedBooks = [...state.books].sort((a, b) => a.title.localeCompare(b.title));
+      
+      sortedBooks.forEach(book => {
+        const option = document.createElement('option');
+        option.value = book.id;
+        option.textContent = book.title;
+        select.appendChild(option);
+      });
+      
+      if (sortedBooks.find(b => b.id === currentVal)) {
+        select.value = currentVal;
+      }
+    }
+
+    function renderPhraseGenreTabs() {
+      const container = document.getElementById('phrases-genre-tabs-container');
+      
+      const phraseGenres = state.phrases.map(phrase => {
+        const book = state.books.find(b => b.id === phrase.bookId);
+        return book ? (book.safeGenre || book.genre || '未分類') : '書籍未指定';
+      });
+      const uniqueGenres = [...new Set(phraseGenres)].sort();
+      
+      if (state.phrases.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+
+      let html = '';
+      const isAllActive = state.phrasesFilter === 'all';
+      const allActiveClass = isAllActive ? 'bg-gray-900 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200';
+      html += `
+        <button class="phrase-filter-btn flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition ${allActiveClass}" data-genre="all">
+          <span>すべて</span>
+          <span class="opacity-70 text-[10px]">(${state.phrases.length})</span>
+        </button>
+      `;
+
+      uniqueGenres.forEach(g => {
+        const count = phraseGenres.filter(genre => genre === g).length;
+        const isActive = state.phrasesFilter === g;
+        const activeClass = isActive ? 'bg-gray-900 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200';
+        html += `
+          <button class="phrase-filter-btn flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition ${activeClass}" data-genre="${escapeHtml(g)}">
+            <span>${escapeHtml(g)}</span>
+            <span class="opacity-70 text-[10px]">(${count})</span>
+          </button>
+        `;
+      });
+      container.innerHTML = html;
+
+      container.querySelectorAll('.phrase-filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          state.phrasesFilter = e.currentTarget.getAttribute('data-genre');
+          renderPhrases();
+        });
+      });
+    }
+
+    function renderPhrases() {
+      renderPhraseGenreTabs();
+      const container = document.getElementById('phrases-list');
+      const emptyState = document.getElementById('phrases-empty-state');
+      const emptyMessage = document.getElementById('phrases-empty-message');
+      container.innerHTML = '';
+      
+      let filteredPhrases = state.phrases;
+      if (state.phrasesFilter !== 'all') {
+        filteredPhrases = state.phrases.filter(phrase => {
+          const book = state.books.find(b => b.id === phrase.bookId);
+          const genre = book ? (book.safeGenre || book.genre || '未分類') : '書籍未指定';
+          return genre === state.phrasesFilter;
+        });
+      }
+      
+      if (filteredPhrases.length === 0) {
+        if (state.phrases.length === 0) {
+          emptyMessage.innerText = 'まだフレーズが記録されていません。';
+        } else {
+          emptyMessage.innerText = 'このジャンルのフレーズはありません。';
+        }
+        emptyState.classList.remove('hidden');
+        emptyState.classList.add('flex');
+        return;
+      }
+      
+      emptyState.classList.add('hidden');
+      emptyState.classList.remove('flex');
+      
+      const sortedPhrases = [...filteredPhrases].sort((a, b) => b.addedAt - a.addedAt);
+      
+      sortedPhrases.forEach(phrase => {
+        const book = state.books.find(b => b.id === phrase.bookId);
+        const dateStr = new Date(phrase.addedAt).toLocaleDateString('ja-JP');
+        
+        const card = document.createElement('div');
+        card.className = 'bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative group transition hover:shadow-md flex flex-col h-full selectable-text';
+        
+        let bookInfoHtml = '';
+        if (book) {
+          const fallbackImg = `https://placehold.co/40x60/f3f4f6/9ca3af?text=${encodeURIComponent(book.title.substring(0,1))}`;
+          bookInfoHtml = `
+            <div class="flex items-center gap-3 mb-3 cursor-pointer hover:bg-gray-50 p-2 -ml-2 rounded-xl transition inline-flex w-fit" onclick="window.openBookDetail('${book.id}')">
+              <img src="${escapeHtml(book.coverUrl) || fallbackImg}" onerror="this.src='${fallbackImg}'" class="w-8 h-12 object-cover rounded shadow-sm">
+              <div class="flex flex-col">
+                <span class="text-sm font-bold text-gray-800 line-clamp-1">${escapeHtml(book.title)}</span>
+                <span class="text-xs text-gray-500">${phrase.page ? `P.${escapeHtml(phrase.page.toString())}` : 'ページ未指定'}</span>
+              </div>
+            </div>
+          `;
+        } else {
+           bookInfoHtml = `
+            <div class="flex items-center gap-2 mb-3 text-xs font-medium text-gray-400 bg-gray-50 px-3 py-1.5 rounded-full inline-flex w-fit">
+              <i class="ph ph-book text-gray-500"></i> 書籍未指定 ${phrase.page ? `(P.${escapeHtml(phrase.page.toString())})` : ''}
+            </div>
+           `;
+        }
+        
+        card.innerHTML = `
+          ${bookInfoHtml}
+          <p class="text-gray-900 font-serif-jp text-[15px] leading-loose whitespace-pre-wrap pl-4 border-l-4 border-indigo-200 mt-2 flex-1">${escapeHtml(phrase.text)}</p>
+          <div class="mt-4 flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-50">
+            <span>${dateStr}</span>
+          </div>
+          ${state.isPortfolioMode ? '' : `
+            <button class="absolute top-4 right-4 w-8 h-8 rounded-full bg-red-50 text-red-500 opacity-0 group-hover:opacity-100 flex items-center justify-center transition hover:bg-red-100 delete-phrase-btn" data-id="${phrase.id}" title="削除">
+              <i class="ph ph-trash"></i>
+            </button>
+          `}
+        `;
+        
+        container.appendChild(card);
+      });
+      
+      if (!state.isPortfolioMode) {
+        document.querySelectorAll('.delete-phrase-btn').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const id = e.currentTarget.getAttribute('data-id');
+            if (confirm('このフレーズを削除しますか？')) {
+              state.phrases = state.phrases.filter(p => p.id !== id);
+              await deletePhraseFromCloud(id);
+              renderPhrases();
+              showToast('フレーズを削除しました');
+            }
+          });
+        });
+      }
+    }
+
+    document.getElementById('phrase-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (state.isPortfolioMode) return;
+      
+      const bookId = document.getElementById('phrase-book-select').value;
+      const pageVal = document.getElementById('phrase-page').value;
+      const text = document.getElementById('phrase-text').value.trim();
+      
+      if (!text) return;
+      
+      const newPhrase = {
+        id: generateId(),
+        bookId: bookId || null,
+        page: pageVal ? parseInt(pageVal, 10) : null,
+        text: text,
+        addedAt: Date.now()
+      };
+      
+      state.phrases.push(newPhrase);
+      await savePhraseToCloud(newPhrase);
+      
+      document.getElementById('phrase-page').value = '';
+      document.getElementById('phrase-text').value = '';
+      
+      renderPhrases();
+      showToast('フレーズを記録しました');
+    });
+
+    /* STREAMING_CHUNK:Mapping Logic... */
+    document.getElementById('btn-connect-mode').addEventListener('click', (e) => {
+      if(state.isPortfolioMode) {
+        showToast('ポートフォリオモードでは編集できません', 'error');
+        return;
+      }
+      state.isConnectMode = !state.isConnectMode;
+      state.connectSourceId = null;
+      const btn = e.currentTarget;
+      if(state.isConnectMode) {
+        btn.classList.add('bg-indigo-500', 'text-white', 'shadow-md');
+        btn.classList.remove('bg-slate-800');
+        btn.innerHTML = `<i class="ph ph-git-merge text-white text-lg"></i> <span class="font-bold">Connect: ON</span>`;
+      } else {
+        btn.classList.remove('bg-indigo-500', 'shadow-md');
+        btn.classList.add('bg-slate-800');
+        btn.innerHTML = `<i class="ph ph-git-merge text-lg"></i> <span>Connect: OFF</span>`;
+      }
+      renderMapping();
+    });
+
+    const mapContainer = document.getElementById('map-container');
+    let isDraggingMap = false;
+    let startX, startY, scrollLeft, scrollTop;
+
+    mapContainer.addEventListener('mousedown', (e) => {
+      if(e.target.closest('.map-node') || e.target.tagName === 'path') return;
+      isDraggingMap = true;
+      mapContainer.classList.add('cursor-grabbing');
+      startX = e.pageX - mapContainer.offsetLeft;
+      startY = e.pageY - mapContainer.offsetTop;
+      scrollLeft = mapContainer.scrollLeft;
+      scrollTop = mapContainer.scrollTop;
+    });
+
+    mapContainer.addEventListener('mouseleave', () => {
+      isDraggingMap = false;
+      mapContainer.classList.remove('cursor-grabbing');
+    });
+
+    mapContainer.addEventListener('mouseup', () => {
+      isDraggingMap = false;
+      mapContainer.classList.remove('cursor-grabbing');
+    });
+
+    mapContainer.addEventListener('mousemove', (e) => {
+      if(!isDraggingMap) return;
+      e.preventDefault();
+      const x = e.pageX - mapContainer.offsetLeft;
+      const y = e.pageY - mapContainer.offsetTop;
+      const walkX = (x - startX) * 1.5;
+      const walkY = (y - startY) * 1.5;
+      mapContainer.scrollLeft = scrollLeft - walkX;
+      mapContainer.scrollTop = scrollTop - walkY;
+    });
+
+    mapContainer.addEventListener('touchstart', (e) => {
+      if(e.target.closest('.map-node') || e.target.tagName === 'path') return;
+      isDraggingMap = true;
+      startX = e.touches[0].pageX - mapContainer.offsetLeft;
+      startY = e.touches[0].pageY - mapContainer.offsetTop;
+      scrollLeft = mapContainer.scrollLeft;
+      scrollTop = mapContainer.scrollTop;
+    });
+    
+    mapContainer.addEventListener('touchend', () => { isDraggingMap = false; });
+    
+    mapContainer.addEventListener('touchmove', (e) => {
+      if(!isDraggingMap) return;
+      if(!e.target.closest('.map-node')) { e.preventDefault(); }
+      const x = e.touches[0].pageX - mapContainer.offsetLeft;
+      const y = e.touches[0].pageY - mapContainer.offsetTop;
+      const walkX = (x - startX) * 1.5;
+      const walkY = (y - startY) * 1.5;
+      mapContainer.scrollLeft = scrollLeft - walkX;
+      mapContainer.scrollTop = scrollTop - walkY;
+    }, { passive: false });
+
+    document.getElementById('btn-export-map').addEventListener('click', async () => {
+      showToast('画像を出力しています...', 'ai');
+      try {
+        const mapContent = document.getElementById('map-content');
+        const imageElements = mapContent.querySelectorAll('img');
+        const originalSources = [];
+        
+        for (let i = 0; i < imageElements.length; i++) {
+            const img = imageElements[i];
+            originalSources.push(img.src);
+            try {
+                if (img.src && !img.src.startsWith('data:')) {
+                    const response = await fetch(img.src, { mode: 'cors', credentials: 'omit' });
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        const reader = new FileReader();
+                        const base64Data = await new Promise((resolve) => {
+                             reader.onloadend = () => resolve(reader.result);
+                             reader.readAsDataURL(blob);
+                        });
+                        img.src = base64Data;
+                    }
+                }
+            } catch (fetchError) {}
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        const canvas = await html2canvas(mapContent, {
+          backgroundColor: '#090a0f',
+          scale: window.devicePixelRatio || 2,
+          useCORS: true,
+          allowTaint: false
+        });
+        
+        for (let i = 0; i < imageElements.length; i++) {
+             imageElements[i].src = originalSources[i];
+        }
+
+        const link = document.createElement('a');
+        link.download = `hondana_constellation_${new Date().getTime()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        showToast('マップを画像として保存しました', 'success');
+      } catch(e) {
+        showToast('画像の保存に失敗しました。', 'error');
+      }
+    });
+
+    function getBookTime(book) {
+      let t;
+      if (book.endDate) t = new Date(book.endDate).getTime();
+      if (!t || isNaN(t)) {
+        if (book.startDate) t = new Date(book.startDate).getTime();
+      }
+      if (!t || isNaN(t)) t = book.addedAt;
+      if (!t || isNaN(t)) t = Date.now();
+      return t;
+    }
+
+    function renderMapping() {
+      const content = document.getElementById('map-content');
+      const svg = document.getElementById('map-svg');
+      const nodesContainer = document.getElementById('map-nodes');
+      const gridContainer = document.getElementById('map-grid');
+
+      svg.innerHTML = '';
+      nodesContainer.innerHTML = '';
+      gridContainer.innerHTML = '';
+
+      if (state.books.length === 0) return;
+
+      const processedBooks = state.books.map(b => ({
+        ...b,
+        safeGenre: b.genre && b.genre.trim() !== '' ? b.genre.trim() : '未分類',
+        time: getBookTime(b)
+      }));
+
+      const genres = [...new Set(processedBooks.map(b => b.safeGenre))].sort();
+      const times = processedBooks.map(b => b.time);
+      const minTime = Math.min(...times);
+      const maxTime = Math.max(...times);
+      const timeRange = Math.max(maxTime - minTime, 1000 * 60 * 60 * 24 * 30);
+      
+      const paddingX = 150;
+      const paddingY = 100;
+      const laneHeight = 200;
+      const containerWidth = mapContainer.clientWidth || 1000;
+      const mapWidth = Math.max(1000, containerWidth * 1.5);
+      const mapHeight = Math.max(600, genres.length * laneHeight + paddingY * 2);
+      
+      content.style.width = `${mapWidth}px`;
+      content.style.height = `${mapHeight}px`;
+
+      // 星座風なので、明確な横線は引かず、うっすらとしたジャンル表記だけを浮かばせる
+      genres.forEach((g, i) => {
+        const y = paddingY + i * laneHeight;
+        gridContainer.innerHTML += `
+          <div class="absolute left-10 text-[10px] font-medium text-white/30 tracking-widest uppercase" style="top: ${y - 12}px">${escapeHtml(g)}</div>
+        `;
+      });
+
+      const nodeCoords = {};
+      processedBooks.forEach((book) => {
+        const genreIdx = genres.indexOf(book.safeGenre);
+        const ratio = (book.time - minTime) / timeRange;
+        const x = paddingX + ratio * (mapWidth - paddingX * 2);
+        // 星の散らばりを表現するため、Y軸方向のブレを大きく取る
+        const hash = Math.abs(book.id.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0));
+        const y = paddingY + genreIdx * laneHeight + ((hash % 120) - 60);
+        
+        nodeCoords[book.id] = { x, y };
+
+        const isSource = state.isConnectMode && state.connectSourceId === book.id;
+        const ringClass = isSource ? 'ring-4 ring-indigo-400 border-white shadow-[0_0_20px_rgba(255,255,255,0.8)]' : 'border-white/20 hover:border-white hover:shadow-[0_0_15px_rgba(255,255,255,0.5)]';
+        const fallbackImg = `https://placehold.co/100x150/f3f4f6/9ca3af?text=${encodeURIComponent(book.title.substring(0,2))}`;
+
+        const nodeHtml = `
+          <div class="map-node absolute transform -translate-x-1/2 -translate-y-1/2 pointer-events-auto cursor-pointer group flex flex-col items-center gap-2 hover:z-50 z-10 transition-all duration-300 ${isSource ? 'scale-110 z-50' : 'hover:scale-110'}" 
+               style="left: ${x}px; top: ${y}px;" data-id="${book.id}">
+            <div class="w-14 h-14 rounded-full overflow-hidden shadow-lg border-2 ${ringClass} transition-all">
+              <img src="${escapeHtml(book.coverUrl || fallbackImg)}" class="w-full h-full object-cover opacity-90 group-hover:opacity-100" onerror="this.src='${fallbackImg}'">
+            </div>
+            <span class="text-[10px] font-medium text-white/70 group-hover:text-white truncate max-w-[120px] transition-colors drop-shadow-md">${escapeHtml(book.title)}</span>
+          </div>
+        `;
+        nodesContainer.insertAdjacentHTML('beforeend', nodeHtml);
+      });
+
+      const svgNs = "http://www.w3.org/2000/svg";
+      state.links.forEach(link => {
+        const s = nodeCoords[link.source];
+        const t = nodeCoords[link.target];
+        if(s && t) {
+          const path = document.createElementNS(svgNs, "path");
+          const cx = (s.x + t.x) / 2;
+          // 星座の線をイメージして、少し発光する細い白線にする
+          path.setAttribute("d", `M ${s.x} ${s.y} C ${cx} ${s.y}, ${cx} ${t.y}, ${t.x} ${t.y}`);
+          path.setAttribute("fill", "transparent");
+          path.setAttribute("stroke", "rgba(255,255,255,0.25)");
+          path.setAttribute("stroke-width", "1.5");
+          path.setAttribute("class", "cursor-pointer pointer-events-auto transition-all hover:stroke-indigo-400 hover:stroke-[3px] drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]");
+          
+          path.addEventListener('click', async (e) => {
+            if(state.isPortfolioMode || !state.isConnectMode) return;
+            state.links = state.links.filter(l => !(l.source === link.source && l.target === link.target));
+            await deleteLinkFromCloud(link);
+            renderMapping();
+            showToast('星座の線を消去しました');
+          });
+          svg.appendChild(path);
+        }
+      });
+
+      document.querySelectorAll('.map-node').forEach(node => {
+        node.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const id = node.getAttribute('data-id');
+          if (state.isConnectMode) {
+            if (!state.connectSourceId) {
+              state.connectSourceId = id;
+              renderMapping(); 
+            } else {
+              if (state.connectSourceId !== id) {
+                const exists = state.links.some(l => 
+                  (l.source === state.connectSourceId && l.target === id) ||
+                  (l.target === state.connectSourceId && l.source === id)
+                );
+                if(!exists) {
+                  const newLink = { source: state.connectSourceId, target: id };
+                  state.links.push(newLink);
+                  await saveLinkToCloud(newLink);
+                  showToast('本同士をリンクしました');
+                }
+              }
+              state.connectSourceId = null;
+              renderMapping();
+            }
+          } else {
+            window.openBookDetail(id);
+          }
+        });
+      });
+    }
+
+    /* STREAMING_CHUNK:Serendipity Logic... */
+    function initSerendipityView() {
+      const container = document.getElementById('serendipity-container');
+      const canvas = document.getElementById('serendipity-canvas');
+      const emptyState = document.getElementById('serendipity-empty-state');
+      container.innerHTML = '';
+      floatingElements = [];
+
+      if (state.phrases.length === 0) {
+        emptyState.classList.remove('hidden');
+        emptyState.classList.add('flex');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      emptyState.classList.remove('flex');
+
+      const containerWidth = container.clientWidth;
+      const containerHeight = container.clientHeight;
+      
+      canvas.width = containerWidth;
+      canvas.height = containerHeight;
+
+      // ランダムに最大30個のフレーズを抽出
+      const displayPhrases = [...state.phrases].sort(() => 0.5 - Math.random()).slice(0, 30);
+
+      displayPhrases.forEach((phrase) => {
+        const book = state.books.find(b => b.id === phrase.bookId);
+        const bookTitle = book ? book.title : '書籍未指定';
+
+        const el = document.createElement('div');
+        el.className = 'floating-phrase glass-card selectable-text';
+        el.innerHTML = `
+          <div class="floating-phrase-text">${escapeHtml(phrase.text)}</div>
+          <div class="floating-phrase-meta"><i class="ph ph-book-open"></i> ${escapeHtml(bookTitle)}</div>
+        `;
+        
+        el.addEventListener('click', () => {
+           if(phrase.bookId) window.openBookDetail(phrase.bookId);
+        });
+
+        el.addEventListener('mouseenter', () => { el.dataset.hover = 'true'; });
+        el.addEventListener('mouseleave', () => { el.dataset.hover = 'false'; });
+
+        container.appendChild(el);
+
+        const rect = el.getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
+        
+        const x = Math.random() * Math.max(0, containerWidth - width);
+        const y = Math.random() * Math.max(0, containerHeight - height);
+        
+        const angle = Math.random() * Math.PI * 2;
+        // 少しゆっくりと漂わせる
+        const speed = 0.08 + Math.random() * 0.15;
+        const vx = Math.cos(angle) * speed;
+        const vy = Math.sin(angle) * speed;
+        const phase = Math.random() * Math.PI * 2;
+
+        floatingElements.push({ el, x, y, vx, vy, width, height, phase });
+      });
+
+      startSerendipityAnimation();
+    }
+
+    function startSerendipityAnimation() {
+      if (serendipityReqId) cancelAnimationFrame(serendipityReqId);
+      let lastTime = performance.now();
+      
+      const canvas = document.getElementById('serendipity-canvas');
+      const ctx = canvas.getContext('2d');
+
+      function animate(time) {
+        const container = document.getElementById('view-serendipity');
+        if (container.classList.contains('hidden')) return;
+
+        const cWidth = canvas.clientWidth;
+        const cHeight = canvas.clientHeight;
+        
+        // リサイズ対応
+        if(canvas.width !== cWidth || canvas.height !== cHeight) {
+           canvas.width = cWidth;
+           canvas.height = cHeight;
+        }
+
+        const dt = Math.min((time - lastTime) / 16.66, 3);
+        lastTime = time;
+
+        ctx.clearRect(0, 0, cWidth, cHeight);
+
+        // 要素の位置更新
+        floatingElements.forEach(item => {
+          if (item.el.dataset.hover === 'true') {
+             item.el.style.transform = `translate(${item.x}px, ${item.y}px) scale(1.03)`;
+             return; 
+          }
+
+          item.x += item.vx * dt;
+          item.y += item.vy * dt;
+
+          // 画面端での反射
+          if (item.x < 0) { item.x = 0; item.vx *= -1; }
+          else if (item.x + item.width > cWidth) { item.x = cWidth - item.width; item.vx *= -1; }
+
+          if (item.y < 0) { item.y = 0; item.vy *= -1; }
+          else if (item.y + item.height > cHeight) { item.y = cHeight - item.height; item.vy *= -1; }
+
+          const wobble = Math.sin(time / 2000 + item.phase) * 5; 
+          item.el.style.transform = `translate(${item.x}px, ${item.y + wobble}px) scale(1)`;
+        });
+
+        // 偶然の結びつき（線）の描画
+        ctx.lineWidth = 1.5;
+        const connectionDistance = 350; // 線が結ばれる距離の閾値
+
+        for (let i = 0; i < floatingElements.length; i++) {
+          for (let j = i + 1; j < floatingElements.length; j++) {
+            const a = floatingElements[i];
+            const b = floatingElements[j];
+            
+            // 各要素の中心座標を計算
+            const ax = a.x + a.width / 2;
+            const ay = a.y + a.height / 2;
+            const bx = b.x + b.width / 2;
+            const by = b.y + b.height / 2;
+            
+            const dx = ax - bx;
+            const dy = ay - by;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            
+            // 一定距離以内に近づいたら、インスピレーションの線を描画
+            if (dist < connectionDistance) {
+              const opacity = Math.pow(1 - (dist / connectionDistance), 2); // 近いほど濃くなる
+              ctx.strokeStyle = `rgba(99, 102, 241, ${opacity * 0.5})`; // インディゴカラー
+              ctx.beginPath();
+              ctx.moveTo(ax, ay);
+              ctx.lineTo(bx, by);
+              ctx.stroke();
+            }
+          }
+        }
+
+        serendipityReqId = requestAnimationFrame(animate);
+      }
+      
+      serendipityReqId = requestAnimationFrame(animate);
+    }
+
+    function stopSerendipityAnimation() {
+      if (serendipityReqId) {
+        cancelAnimationFrame(serendipityReqId);
+        serendipityReqId = null;
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      if (state.activeTab === 'bookshelf') renderBookshelf();
+      else if (state.activeTab === 'mapping') renderMapping();
+      else if (state.activeTab === 'serendipity') {
+         stopSerendipityAnimation();
+         setTimeout(initSerendipityView, 100);
+      }
+    });
+    
+    initApp();
+  </script>
+</body>
+</html>
