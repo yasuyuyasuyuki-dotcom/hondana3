@@ -138,6 +138,27 @@
     .spine-pop .pop-cap { margin-top: 10px; font-size: 10px; text-align: center; color: var(--ink); font-family: 'Noto Serif JP', serif; line-height: 1.5; }
     @media (hover: hover) { .spine:hover .spine-pop { opacity: 1; transform: translateX(-50%) translateY(0); } }
 
+
+    /* ===== Wall(表紙を並べる) ===== */
+    .wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 22px 16px; }
+    @media (max-width: 640px) { .wall { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 10px; } }
+    .wall-item { cursor: pointer; outline: none; transition: transform .45s cubic-bezier(.2,.8,.2,1); }
+    .wall-item:hover, .wall-item:focus-visible { transform: translateY(-4px); }
+    .wall-item .cover { box-shadow: 0 1px 1px rgba(0,0,0,.05), 0 12px 18px -14px rgba(0,0,0,.4); }
+    .wall-item.is-wish .cover { filter: grayscale(1); opacity: .45; }
+    .wall-month { display: flex; align-items: baseline; gap: 14px; margin: 0 0 18px; }
+    .wall-group + .wall-group { margin-top: 56px; }
+
+    /* ===== Calendar ===== */
+    .mini-cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+    .mini-cal span { aspect-ratio: 1 / 1; display: block; border-radius: 1px; }
+    .cal-month-btn { text-align: left; cursor: pointer; }
+    .cal-month-btn .label { transition: color .2s; }
+    .cal-month-btn:hover .label, .cal-month-btn.active .label { color: var(--ink); }
+    .cal-month-btn.active .label { text-decoration: underline; text-underline-offset: 6px; }
+    .day-cell { position: relative; border-top: 1px solid var(--line); min-height: 64px; padding: 6px 4px 6px; }
+    @media (min-width: 640px) { .day-cell { min-height: 108px; padding: 8px 6px; } }
+
     /* ===== モーダル・トースト ===== */
     .modal-panel { transform: translateY(14px); opacity: 0; transition: transform .45s cubic-bezier(.16,1,.3,1), opacity .3s; }
     .modal-open .modal-panel { transform: none; opacity: 1; }
@@ -194,8 +215,9 @@
     <div class="max-w-6xl mx-auto px-5 sm:px-10 h-16 sm:h-20 flex items-center justify-between gap-4">
       <a href="./" class="font-serif-jp text-[17px] tracking-[.28em] font-medium">hondana</a>
 
-      <nav class="hidden md:flex items-center gap-9">
+      <nav class="hidden md:flex items-center gap-8">
         <button data-tab="bookshelf" class="tab-btn link-tab">Collection</button>
+        <button data-tab="calendar" class="tab-btn link-tab">Calendar</button>
         <button data-tab="phrases" class="tab-btn link-tab">Phrases</button>
         <button data-tab="mapping" class="tab-btn link-tab">Constellation</button>
         <button data-tab="serendipity" class="tab-btn link-tab">Serendipity</button>
@@ -216,6 +238,7 @@
     <!-- モバイル用ナビ -->
     <nav class="md:hidden flex items-center gap-7 px-5 pb-3 overflow-x-auto no-scrollbar">
       <button data-tab="bookshelf" class="tab-btn link-tab">Collection</button>
+      <button data-tab="calendar" class="tab-btn link-tab">Calendar</button>
       <button data-tab="phrases" class="tab-btn link-tab">Phrases</button>
       <button data-tab="mapping" class="tab-btn link-tab">Constellation</button>
       <button data-tab="serendipity" class="tab-btn link-tab">Serendipity</button>
@@ -231,24 +254,17 @@
     </div>
   </div>
 
-  <main class="flex-1 max-w-6xl mx-auto w-full px-5 sm:px-10 pt-8 sm:pt-14 pb-24 flex flex-col">
+  <main class="flex-1 max-w-6xl mx-auto w-full px-5 sm:px-10 pt-8 sm:pt-12 pb-24 flex flex-col">
 
     <!-- ===== Collection ===== -->
     <section id="view-bookshelf" class="view flex-1 flex flex-col">
-      <div class="flex items-end justify-between gap-6 mb-10 sm:mb-14">
-        <div>
-          <p class="label mb-3" id="collection-kicker">Permanent Collection</p>
-          <h2 class="font-serif-jp text-3xl sm:text-[44px] font-light tracking-[.08em] leading-tight">本の収蔵庫</h2>
-        </div>
-        <p id="collection-count" class="label hidden sm:block pb-2"></p>
-      </div>
 
       <div id="stats" class="mb-14 sm:mb-20"></div>
 
       <div class="flex flex-col gap-5 mb-12 sm:mb-16 border-b hair pb-5">
         <div class="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
           <div id="status-filters" class="flex items-center gap-6 sm:gap-8 overflow-x-auto no-scrollbar"></div>
-          <div class="flex items-end gap-5 w-full sm:w-auto">
+          <div class="flex items-end gap-4 sm:gap-5 w-full sm:w-auto">
             <input id="shelf-search" type="search" placeholder="Search" class="field flex-1 min-w-0 sm:w-44 !py-1 text-[13px]">
             <select id="shelf-sort" class="field !w-auto !py-1 text-[12px] tracking-wider pr-4">
               <option value="shelf">読み始め順</option>
@@ -260,11 +276,15 @@
             </select>
             <div class="flex items-center gap-4 shrink-0">
               <button data-view="gallery" class="view-btn link-tab !pb-1">Gallery</button>
+              <button data-view="wall" class="view-btn link-tab !pb-1">Wall</button>
               <button data-view="archive" class="view-btn link-tab !pb-1">Archive</button>
             </div>
           </div>
         </div>
-        <div id="genre-chips" class="flex items-center gap-x-1 gap-y-2 flex-wrap text-xs"></div>
+        <div class="flex items-end justify-between gap-5">
+          <div id="genre-chips" class="flex items-center gap-x-1 gap-y-2 flex-wrap text-xs"></div>
+          <button id="btn-open-export" class="btn-text shrink-0 ml-auto">Export image ↗</button>
+        </div>
       </div>
 
       <div id="bookshelf-container" class="pt-6"></div>
@@ -275,12 +295,49 @@
       </div>
     </section>
 
+    <!-- ===== Calendar ===== -->
+    <section id="view-calendar" class="view hidden flex-1 flex-col">
+      <div class="flex items-end justify-between gap-5 mb-8">
+        <div class="flex items-center gap-6">
+          <button id="cal-prev" class="btn-text text-base" aria-label="前の年">←</button>
+          <span id="cal-year" class="font-serif-jp text-3xl sm:text-4xl font-light tabular-nums tracking-[.08em]"></span>
+          <button id="cal-next" class="btn-text text-base" aria-label="次の年">→</button>
+        </div>
+        <button id="btn-export-year" class="btn-text">Export year ↗</button>
+      </div>
+
+      <div id="cal-stats" class="mb-16"></div>
+
+      <div class="mb-20">
+        <div class="flex items-end justify-between gap-4 mb-7">
+          <p class="label">Reading days</p>
+          <div id="cal-legend" class="flex items-center gap-2 text-[10px] text-mute"></div>
+        </div>
+        <div id="cal-year-grid" class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-x-6 sm:gap-x-9 gap-y-10"></div>
+      </div>
+
+      <div class="mb-20">
+        <div class="flex items-end justify-between gap-4 mb-6">
+          <div class="flex items-center gap-5">
+            <button id="cal-mprev" class="btn-text" aria-label="前の月">←</button>
+            <p id="cal-month-title" class="font-serif-jp text-xl sm:text-2xl font-light tracking-[.06em] tabular-nums"></p>
+            <button id="cal-mnext" class="btn-text" aria-label="次の月">→</button>
+          </div>
+          <button id="btn-export-month" class="btn-text">Export month ↗</button>
+        </div>
+        <div class="grid grid-cols-7 gap-x-1 mb-1" id="cal-weekdays"></div>
+        <div id="cal-month-grid" class="grid grid-cols-7 gap-x-1"></div>
+        <div id="cal-month-list" class="mt-12 grid md:grid-cols-2 gap-10"></div>
+      </div>
+
+      <div>
+        <p class="label mb-6">Genres</p>
+        <div id="cal-genres" class="max-w-2xl"></div>
+      </div>
+    </section>
+
     <!-- ===== Phrases ===== -->
     <section id="view-phrases" class="view hidden flex-1 flex-col">
-      <div class="mb-10 sm:mb-14">
-        <p class="label mb-3">Fragments</p>
-        <h2 class="font-serif-jp text-3xl sm:text-[44px] font-light tracking-[.08em] leading-tight">言葉の断片</h2>
-      </div>
 
       <div id="phrase-form-container" class="mb-16 max-w-3xl">
         <p id="phrase-form-title" class="label mb-5">New Fragment</p>
@@ -312,9 +369,7 @@
     <section id="view-mapping" class="view hidden flex-1 flex-col">
       <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-5 mb-8">
         <div>
-          <p class="label mb-3">Constellation</p>
-          <h2 class="font-serif-jp text-3xl sm:text-[44px] font-light tracking-[.08em] leading-tight">思考の星座</h2>
-          <p id="map-hint" class="text-xs text-mute mt-4 leading-relaxed">本と本を線で結び、あなただけの星座を描きましょう。</p>
+          <p id="map-hint" class="text-xs text-mute leading-relaxed">本と本を線で結び、あなただけの星座を描きましょう。</p>
         </div>
         <div class="flex items-center gap-6">
           <button id="btn-export-map" class="btn-text">Export</button>
@@ -332,12 +387,9 @@
 
     <!-- ===== Serendipity ===== -->
     <section id="view-serendipity" class="view hidden flex-1 flex-col">
-      <div class="flex items-end justify-between gap-5 mb-8">
-        <div>
-          <p class="label mb-3">Serendipity</p>
-          <h2 class="font-serif-jp text-3xl sm:text-[44px] font-light tracking-[.08em] leading-tight">偶然の出会い</h2>
-        </div>
-        <button id="btn-shuffle" class="btn-text pb-2">Shuffle</button>
+      <div class="flex items-end justify-between gap-5 mb-6">
+        <p class="text-xs text-mute">記録した言葉が漂い、近づいたもの同士が結ばれます。</p>
+        <button id="btn-shuffle" class="btn-text">Shuffle</button>
       </div>
       <div class="relative overflow-hidden border hair bg-[#f1efea] h-[calc(100vh-280px)] min-h-[460px]">
         <canvas id="serendipity-canvas" class="absolute inset-0 w-full h-full z-0 pointer-events-none"></canvas>
@@ -446,6 +498,42 @@
           </div>
         </section>
       </div>
+    </div>
+  </div>
+
+  <!-- ===== Export Modal ===== -->
+  <div id="export-modal" class="fixed inset-0 z-50 hidden justify-center items-start sm:items-center bg-[#141413]/30 backdrop-blur-[2px] overflow-y-auto sm:p-8">
+    <div class="modal-panel bg-[#f7f6f3] w-full sm:max-w-4xl relative min-h-screen sm:min-h-0 my-auto shadow-[0_40px_80px_-40px_rgba(0,0,0,.5)] grid md:grid-cols-[minmax(0,1fr)_280px]">
+      <div class="bg-[#efede8] p-6 sm:p-10 flex items-center justify-center min-h-[380px]">
+        <div id="poster-preview" class="shadow-[0_24px_40px_-24px_rgba(0,0,0,.45)]"></div>
+      </div>
+      <aside class="px-7 py-10 sm:px-8 flex flex-col gap-8">
+        <div class="flex items-center justify-between">
+          <p class="label">Export image</p>
+          <button id="btn-close-export" class="btn-text">Close ✕</button>
+        </div>
+        <div>
+          <p class="label mb-3">Period</p>
+          <div id="exp-type" class="flex gap-6 mb-4">
+            <button data-exptype="month" class="link-tab">Month</button>
+            <button data-exptype="year" class="link-tab">Year</button>
+          </div>
+          <select id="exp-period" class="field text-[13px]"></select>
+        </div>
+        <div>
+          <p class="label mb-3">Format</p>
+          <div id="exp-format" class="flex gap-6">
+            <button data-expfmt="4:5" class="link-tab">4:5</button>
+            <button data-expfmt="9:16" class="link-tab">9:16</button>
+            <button data-expfmt="1:1" class="link-tab">1:1</button>
+          </div>
+        </div>
+        <label class="flex items-center gap-3 text-xs text-mute cursor-pointer">
+          <input type="checkbox" id="exp-titles" checked class="accent-[#141413]"> タイトルを添える(冊数が少ないとき)
+        </label>
+        <p class="text-[11px] text-mute leading-relaxed">その期間に読み終えた本(読了日)を並べます。表紙画像を読み込めない本は、自動の装丁で表示されます。</p>
+        <button id="btn-exp-save" class="btn-ink mt-auto">画像を保存</button>
+      </aside>
     </div>
   </div>
 
@@ -584,7 +672,6 @@
       state.isPortfolioMode = true;
       ['btn-add-book', 'btn-share', 'btn-share-m', 'auth-container', 'phrase-form-container', 'btn-connect-mode'].forEach(id => $(id).classList.add('hidden'));
       $('portfolio-banner').classList.remove('hidden');
-      $('collection-kicker').textContent = 'Shared Collection';
       $('map-hint').textContent = '本と本のつながりを、星座として眺められます。';
     }
 
@@ -731,6 +818,7 @@
       if (state.activeTab === 'phrases') { renderPhraseBookSelect(); renderPhrases(); }
       else if (state.activeTab === 'mapping') renderMapping();
       else if (state.activeTab === 'serendipity') initSerendipityView();
+      else if (state.activeTab === 'calendar') renderCalendar();
     }
 
     // 収蔵番号(追加した順の通し番号)
@@ -740,11 +828,11 @@
     const noStr = (n) => `No. ${String(n).padStart(3, '0')}`;
 
     /* ================= 統計(展示の導入) ================= */
-    const finishDate = (b) => b.endDate ? new Date(b.endDate) : new Date(b.addedAt || Date.now());
+    const parseDay = (v) => { if (!v) return null; const d = new Date(v + 'T00:00:00'); return isNaN(d) ? null : d; };
+    const finishDate = (b) => parseDay(b.endDate) || new Date(b.addedAt || Date.now());
 
     function renderStats() {
       const el = $('stats');
-      $('collection-count').textContent = state.books.length ? `${state.books.length} works` : '';
       if (!state.books.length) { el.innerHTML = ''; return; }
       const now = new Date();
       const y = now.getFullYear();
@@ -873,6 +961,14 @@
       $('empty-state').classList.replace('flex', 'hidden');
       const acc = accessionMap();
 
+      if (state.viewMode === 'wall') {
+        container.innerHTML = `<div class="wall">${list.map((b, i) => `
+          <div class="wall-item fade-in ${b.status === 'wish' ? 'is-wish' : ''}" data-open="${esc(b.id)}" tabindex="0" title="${esc(b.title)}${b.author ? ' / ' + esc(b.author) : ''}" style="animation-delay:${Math.min(i, 30) * 15}ms">
+            ${coverHtml(b)}
+          </div>`).join('')}</div>`;
+        return;
+      }
+
       if (state.viewMode !== 'archive') {
         container.innerHTML = `<div class="gallery">${list.map((b, i) => `
           <figure class="work fade-in ${b.status === 'wish' ? 'is-wish' : ''}" data-open="${esc(b.id)}" tabindex="0" style="animation-delay:${Math.min(i, 16) * 35}ms">
@@ -913,7 +1009,7 @@
     // コレクションのイベント
     document.addEventListener('click', (e) => {
       const opener = e.target.closest('[data-open]');
-      if (opener && !e.target.closest('#modal')) openDetail(opener.dataset.open);
+      if (opener && !e.target.closest('#modal') && !e.target.closest('#export-modal')) openDetail(opener.dataset.open);
     });
     $('bookshelf-container').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { const t = e.target.closest('[data-open]'); if (t) openDetail(t.dataset.open); }
@@ -1034,7 +1130,11 @@
     $('btn-close-modal').addEventListener('click', closeModal);
     $('btn-cancel-book').addEventListener('click', closeModal);
     $('modal').addEventListener('click', (e) => { if (e.target.id === 'modal') closeModal(); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('modal').classList.contains('hidden')) closeModal(); });
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      if (!$('export-modal').classList.contains('hidden')) closeExport();
+      else if (!$('modal').classList.contains('hidden')) closeModal();
+    });
 
     $('detail-title').addEventListener('input', updateCoverPreview);
     $('detail-author').addEventListener('input', updateCoverPreview);
@@ -1544,6 +1644,376 @@
     }
     function stopSerendipity() { if (serendipityReq) cancelAnimationFrame(serendipityReq); serendipityReq = null; }
     $('btn-shuffle').addEventListener('click', initSerendipityView);
+
+
+    /* ================= Calendar ================= */
+    const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const MONTHS_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const DAY_MS = 86400000;
+    const today0 = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
+    const dkey = (d) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    const ymKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const cal = { year: new Date().getFullYear(), month: new Date().getMonth() };
+
+    // 読み始め〜読了(読書中は今日まで)の期間
+    function readingSpans() {
+      const today = today0();
+      return state.books.filter(b => b.status !== 'wish').map(b => {
+        const s = parseDay(b.startDate);
+        if (!s) return null;
+        let e = b.status === 'read' ? (parseDay(b.endDate) || s) : today;
+        if (e < s) e = s;
+        return { b, s, e };
+      }).filter(Boolean);
+    }
+
+    function yearData(y) {
+      const active = new Map(), finished = new Map();
+      const ys = new Date(y, 0, 1), ye = new Date(y, 11, 31);
+      for (const sp of readingSpans()) {
+        const end = sp.e < ye ? sp.e : ye;
+        for (let d = new Date(sp.s > ys ? sp.s : ys); d <= end; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)) {
+          const k = dkey(d); active.set(k, (active.get(k) || 0) + 1);
+        }
+      }
+      const read = state.books.filter(b => b.status === 'read' && finishDate(b).getFullYear() === y);
+      for (const b of read) { const k = dkey(finishDate(b)); if (!finished.has(k)) finished.set(k, []); finished.get(k).push(b); }
+      return { active, finished, read };
+    }
+
+    function calYearRange() {
+      const now = new Date().getFullYear();
+      let min = now;
+      state.books.forEach(b => {
+        if (b.status === 'read') min = Math.min(min, finishDate(b).getFullYear());
+        const s = parseDay(b.startDate); if (s) min = Math.min(min, s.getFullYear());
+      });
+      return { min, max: now };
+    }
+
+    function statCells(items) {
+      const cell = 'py-7 md:py-8 md:px-8 md:first:pl-0 md:last:pr-0';
+      return `<div class="grid grid-cols-2 md:grid-cols-4 border-y hair md:divide-x divide-[#e3e1db]">${items.map(([l, v, u], i) => `
+        <div class="${cell} ${i >= 2 ? 'border-t md:border-t-0 hair' : ''}">
+          <p class="label">${l}</p>
+          <p class="font-serif-jp text-4xl sm:text-5xl font-light mt-4 tabular-nums truncate">${v}</p>
+          <p class="text-[11px] text-mute mt-2 tracking-wider">${u}</p>
+        </div>`).join('')}</div>`;
+    }
+
+    function renderCalendar() {
+      const range = calYearRange();
+      cal.year = clamp(cal.year, range.min, range.max);
+      $('cal-year').textContent = cal.year;
+      $('cal-prev').style.visibility = cal.year > range.min ? 'visible' : 'hidden';
+      $('cal-next').style.visibility = cal.year < range.max ? 'visible' : 'hidden';
+      const yd = yearData(cal.year);
+      const today = today0();
+
+      // 年の集計
+      const pages = yd.read.reduce((s, b) => s + (parseInt(b.pages, 10) || 0), 0);
+      const durs = yd.read.map(b => { const s = parseDay(b.startDate), e = parseDay(b.endDate); return s && e && e >= s ? Math.round((e - s) / DAY_MS) + 1 : null; }).filter(Boolean);
+      const avg = durs.length ? Math.round(durs.reduce((a, b) => a + b, 0) / durs.length) : '—';
+      $('cal-stats').innerHTML = statCells([
+        ['Books', yd.read.length, 'works read'],
+        ['Pages', pages.toLocaleString(), 'pages read'],
+        ['Reading days', yd.active.size, 'days with a book'],
+        ['Pace', avg, avg === '—' ? '読み始め・読了日を入れると表示' : 'days per book']
+      ]);
+
+      // 12か月の小さなカレンダー
+      const shade = (k, date) => {
+        if (yd.finished.has(k)) return '#141413';
+        const c = yd.active.get(k) || 0;
+        if (c) return `rgba(20,20,19,${[0, .14, .28, .44][Math.min(c, 3)]})`;
+        return date > today ? '#f1efea' : '#e6e4de';
+      };
+      $('cal-year-grid').innerHTML = MONTHS.map((mn, m) => {
+        const first = new Date(cal.year, m, 1).getDay(), days = new Date(cal.year, m + 1, 0).getDate();
+        let cells = '<span></span>'.repeat(first);
+        for (let d = 1; d <= days; d++) {
+          const date = new Date(cal.year, m, d), k = dkey(date), fin = yd.finished.get(k);
+          const tip = `${m + 1}/${d}${fin ? ' 読了: ' + fin.map(b => b.title).join(', ') : (yd.active.get(k) ? ` 読書中 ${yd.active.get(k)}冊` : '')}`;
+          cells += `<span style="background:${shade(k, date)}" title="${esc(tip)}"></span>`;
+        }
+        const n = yd.read.filter(b => finishDate(b).getMonth() === m).length;
+        return `<button class="cal-month-btn block w-full self-start ${m === cal.month ? 'active' : ''}" data-calm="${m}">
+          <div class="flex items-baseline justify-between mb-3"><span class="label">${mn}</span><span class="text-[10px] text-mute tabular-nums">${n ? n + ' 冊' : ''}</span></div>
+          <div class="mini-cal">${cells}</div>
+        </button>`;
+      }).join('');
+      $('cal-legend').innerHTML = `<span>少</span>${['#e6e4de', 'rgba(20,20,19,.14)', 'rgba(20,20,19,.28)', 'rgba(20,20,19,.44)'].map(c => `<span class="inline-block w-2.5 h-2.5" style="background:${c}"></span>`).join('')}<span>多</span><span class="inline-block w-2.5 h-2.5 bg-[#141413] ml-3"></span><span>読了日</span>`;
+
+      // 選択中の月
+      const m = cal.month;
+      $('cal-month-title').textContent = `${cal.year}.${String(m + 1).padStart(2, '0')}`;
+      $('cal-weekdays').innerHTML = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(w => `<span class="label !text-[9px] !tracking-[.14em] pb-2">${w}</span>`).join('');
+      const first = new Date(cal.year, m, 1).getDay(), days = new Date(cal.year, m + 1, 0).getDate();
+      let cells = '<div></div>'.repeat(first);
+      for (let d = 1; d <= days; d++) {
+        const date = new Date(cal.year, m, d), k = dkey(date);
+        const c = yd.active.get(k) || 0, fin = yd.finished.get(k) || [];
+        const isToday = date.getTime() === today.getTime();
+        cells += `<div class="day-cell" style="${c ? `background:rgba(20,20,19,${Math.min(c, 3) * 0.025})` : ''}">
+          <span class="text-[10px] tabular-nums ${isToday ? 'font-semibold underline underline-offset-4' : 'text-mute'}">${d}</span>
+          ${fin.length ? `<div class="absolute left-1 right-1 bottom-1.5 sm:left-1.5 flex items-end gap-1">${fin.slice(0, 2).map(b => `<div class="w-4 sm:w-7 shrink-0 cursor-pointer" data-open="${esc(b.id)}" title="${esc(b.title)}">${coverHtml(b)}</div>`).join('')}${fin.length > 2 ? `<span class="text-[9px] text-mute">+${fin.length - 2}</span>` : ''}</div>` : ''}
+        </div>`;
+      }
+      $('cal-month-grid').innerHTML = cells;
+
+      const mStart = new Date(cal.year, m, 1), mEnd = new Date(cal.year, m + 1, 0);
+      const finishedM = yd.read.filter(b => finishDate(b).getMonth() === m).sort((a, b) => finishDate(a) - finishDate(b));
+      const readingM = readingSpans().filter(sp => sp.s <= mEnd && sp.e >= mStart && !finishedM.includes(sp.b)).map(sp => sp.b);
+      const md = (d) => `${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+      const item = (b, sub) => `<button data-open="${esc(b.id)}" class="flex items-center gap-4 w-full text-left py-3 border-b hair group">
+          <div class="w-9 shrink-0">${coverHtml(b)}</div>
+          <div class="min-w-0 flex-1"><p class="font-serif-jp text-[13px] truncate group-hover:underline underline-offset-4">${esc(b.title)}</p><p class="text-[11px] text-mute truncate">${esc(b.author || '—')}</p></div>
+          <span class="text-[10px] text-mute tabular-nums shrink-0 tracking-wider">${sub}</span>
+        </button>`;
+      const col = (label, items, empty) => `<div><p class="label mb-2">${label}<span class="ml-2">${items.length || ''}</span></p>${items.length ? items.join('') : `<p class="text-xs text-mute font-serif-jp py-3">${empty}</p>`}</div>`;
+      $('cal-month-list').innerHTML =
+        col('Finished', finishedM.map(b => item(b, md(finishDate(b)))), 'この月に読み終えた本はありません') +
+        col('Reading', readingM.map(b => item(b, b.status === 'reading' ? pct(b) + '%' : '')), 'この月に読んでいた本はありません');
+
+      // ジャンルの内訳
+      const gc = {};
+      yd.read.forEach(b => { const g = genreOf(b); gc[g] = (gc[g] || 0) + 1; });
+      const gs = Object.entries(gc).sort((a, b) => b[1] - a[1]);
+      const gmax = gs.length ? gs[0][1] : 1;
+      $('cal-genres').innerHTML = gs.length ? gs.map(([g, n]) => `
+        <div class="flex items-center gap-5 py-2.5">
+          <span class="w-24 sm:w-32 text-xs truncate tracking-wider">${esc(g)}</span>
+          <div class="flex-1 h-px bg-[#e3e1db] relative"><i class="absolute left-0 -top-px h-[3px] bg-[#141413]" style="width:${n / gmax * 100}%"></i></div>
+          <span class="text-xs tabular-nums w-6 text-right">${n}</span>
+        </div>`).join('') : '<p class="text-xs text-mute font-serif-jp">この年に読み終えた本はまだありません</p>';
+    }
+
+    $('cal-prev').addEventListener('click', () => { cal.year--; renderCalendar(); });
+    $('cal-next').addEventListener('click', () => { cal.year++; renderCalendar(); });
+    $('cal-mprev').addEventListener('click', () => {
+      const r = calYearRange();
+      if (cal.month === 0) { if (cal.year > r.min) { cal.year--; cal.month = 11; } } else cal.month--;
+      renderCalendar();
+    });
+    $('cal-mnext').addEventListener('click', () => {
+      const r = calYearRange();
+      if (cal.month === 11) { if (cal.year < r.max) { cal.year++; cal.month = 0; } } else cal.month++;
+      renderCalendar();
+    });
+    $('cal-year-grid').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-calm]'); if (!b) return;
+      cal.month = parseInt(b.dataset.calm, 10); renderCalendar();
+    });
+    $('btn-export-year').addEventListener('click', () => openExport('year', cal.year));
+    $('btn-export-month').addEventListener('click', () => openExport('month', cal.year, cal.month));
+
+    /* ================= まとめ画像の書き出し ================= */
+    const FORMATS = { '4:5': [1080, 1350], '9:16': [1080, 1920], '1:1': [1080, 1080] };
+    const exp = { type: 'month', key: '', fmt: safeLS.get('hondana_expfmt', '4:5'), token: 0 };
+    if (!FORMATS[exp.fmt]) exp.fmt = '4:5';
+
+    const periodKey = (type, d) => type === 'year' ? String(d.getFullYear()) : ymKey(d);
+    function periodOptions(type) {
+      const counts = new Map();
+      state.books.filter(b => b.status === 'read').forEach(b => { const k = periodKey(type, finishDate(b)); counts.set(k, (counts.get(k) || 0) + 1); });
+      const cur = periodKey(type, new Date());
+      if (!counts.has(cur)) counts.set(cur, 0);
+      return [...counts.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+    }
+    function booksForPeriod(type, key) {
+      return state.books.filter(b => b.status === 'read' && periodKey(type, finishDate(b)) === key)
+        .sort((a, b) => finishDate(a) - finishDate(b) || (a.addedAt || 0) - (b.addedAt || 0));
+    }
+
+    function syncExportUI() {
+      document.querySelectorAll('#exp-type [data-exptype]').forEach(b => b.classList.toggle('active', b.dataset.exptype === exp.type));
+      document.querySelectorAll('#exp-format [data-expfmt]').forEach(b => b.classList.toggle('active', b.dataset.expfmt === exp.fmt));
+      const opts = periodOptions(exp.type);
+      if (!opts.some(([k]) => k === exp.key)) exp.key = opts[0][0];
+      $('exp-period').innerHTML = opts.map(([k, n]) => {
+        const label = exp.type === 'year' ? k : k.replace('-', '.');
+        return `<option value="${k}">${label} — ${n} 冊</option>`;
+      }).join('');
+      $('exp-period').value = exp.key;
+    }
+
+    function openExport(type, y, m) {
+      const now = new Date();
+      exp.type = type;
+      const yy = y ?? now.getFullYear(), mm = m ?? now.getMonth();
+      exp.key = type === 'year' ? String(yy) : `${yy}-${String(mm + 1).padStart(2, '0')}`;
+      syncExportUI();
+      const modal = $('export-modal');
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+      requestAnimationFrame(() => modal.classList.add('modal-open'));
+      renderPosterPreview();
+    }
+    function closeExport() {
+      const modal = $('export-modal');
+      modal.classList.remove('modal-open');
+      document.body.style.overflow = '';
+      setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 250);
+    }
+
+    // 表紙画像をdataURLに(書き出し用。CORSで取得できないものは自動装丁)
+    const imgCache = new Map();
+    function toDataUrl(url) {
+      if (!url) return Promise.resolve(null);
+      if (url.startsWith('data:')) return Promise.resolve(url);
+      if (!imgCache.has(url)) imgCache.set(url, (async () => {
+        try {
+          const r = await fetch(url, { mode: 'cors', credentials: 'omit' });
+          if (!r.ok) return null;
+          const bl = await r.blob();
+          return await new Promise(res => { const fr = new FileReader(); fr.onloadend = () => res(fr.result); fr.onerror = () => res(null); fr.readAsDataURL(bl); });
+        } catch { return null; }
+      })());
+      return imgCache.get(url);
+    }
+
+    function bestGrid(n, aw, ah, cap) {
+      let best = null;
+      for (let c = 1; c <= n; c++) {
+        const r = Math.ceil(n / c);
+        const gx = c > 9 ? 14 : c > 5 ? 22 : 32;
+        const capH = cap ? 52 : 0;
+        const gy = cap ? 26 : gx;
+        let w = (aw - (c - 1) * gx) / c;
+        if (r * (w * 1.5 + capH) + (r - 1) * gy > ah) w = ((ah - (r - 1) * gy) / r - capH) / 1.5;
+        w = Math.min(w, 260);
+        if (!best || w > best.w + 0.5) best = { c, r, w, gx, gy, capH };
+      }
+      return best;
+    }
+
+    function posterCover(b, w, img) {
+      const c = colorFor(b), h = w * 1.5, fs = w * 0.095;
+      const text = w >= 54 ? `
+        <div style="position:absolute;left:${w * .12}px;right:${w * .12}px;top:${w * .13}px;font-family:'Noto Serif JP',serif;font-size:${fs}px;line-height:${fs * 1.6}px;font-weight:500;max-height:${fs * 1.6 * 5}px;overflow:hidden;overflow-wrap:anywhere">${esc(b.title)}</div>
+        <div style="position:absolute;left:${w * .12}px;right:${w * .12}px;bottom:${w * .12}px;font-family:'Noto Serif JP',serif;font-size:${fs * .62}px;line-height:${fs * 1.1}px;height:${fs * 1.1}px;letter-spacing:.08em;opacity:.7;white-space:nowrap;overflow:hidden">${esc(b.author || '')}</div>` : '';
+      const photo = img ? `<div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center"></div>` : '';
+      const sh = Math.max(6, w * .07);
+      return `<div style="position:relative;width:${w}px;height:${h}px">
+        <div style="position:absolute;left:4%;right:4%;top:${h}px;height:${sh}px;background:linear-gradient(rgba(0,0,0,.16),rgba(0,0,0,0))"></div>
+        <div style="position:absolute;inset:0;background:${c.bg};color:${c.fg};overflow:hidden">${text}${photo}</div>
+      </div>`;
+    }
+
+    async function buildPoster() {
+      const [W, H] = FORMATS[exp.fmt];
+      const books = booksForPeriod(exp.type, exp.key);
+      const imgs = await Promise.all(books.map(b => toDataUrl(b.coverUrl)));
+      const P = 88;
+      const [yy, mm] = exp.key.split('-');
+      const big = exp.type === 'year' ? yy : `${yy}.${mm}`;
+      const kicker = exp.type === 'year' ? 'A year in reading' : `${MONTHS_FULL[parseInt(mm, 10) - 1]} ${yy}`;
+      const pages = books.reduce((s, b) => s + (parseInt(b.pages, 10) || 0), 0);
+      const headerH = 400, footerH = 90;
+      const aw = W - P * 2, ah = H - P * 2 - headerH - footerH;
+      const top0 = P + headerH;
+
+      let grid = '';
+      if (!books.length) {
+        grid = `<div style="position:absolute;left:${P}px;right:${P}px;top:${top0 + ah / 2 - 20}px;text-align:center;font-family:'Noto Serif JP',serif;font-size:24px;color:#8c8a84;letter-spacing:.1em">この期間に読み終えた本はまだありません</div>`;
+      } else {
+        const wantCap = $('exp-titles').checked && books.length <= 16;
+        let L = bestGrid(books.length, aw, ah, wantCap);
+        if (wantCap && L.w < 130) L = bestGrid(books.length, aw, ah, false);
+        const cap = L.capH > 0;
+        const gridW = L.c * L.w + (L.c - 1) * L.gx;
+        const gridH = L.r * (L.w * 1.5 + L.capH) + (L.r - 1) * L.gy;
+        const ox = P + (aw - gridW) / 2;
+        const oy = top0 + Math.max(0, (ah - gridH) / 2) * 0.55;
+        books.forEach((b, i) => {
+          const col = i % L.c, row = Math.floor(i / L.c);
+          const x = ox + col * (L.w + L.gx), y = oy + row * (L.w * 1.5 + L.capH + L.gy);
+          const d = finishDate(b);
+          grid += `<div style="position:absolute;left:${x}px;top:${y}px;width:${L.w}px">
+            ${posterCover(b, L.w, imgs[i])}
+            ${cap ? `<div style="margin-top:12px;font-family:'Noto Serif JP',serif;font-size:${clamp(L.w * .085, 13, 18)}px;line-height:${clamp(L.w * .085, 13, 18) * 1.7}px;height:${clamp(L.w * .085, 13, 18) * 1.7}px;white-space:nowrap;overflow:hidden;color:#141413">${esc(b.title)}</div>
+            <div style="font-size:12px;line-height:18px;letter-spacing:.16em;color:#8c8a84">${exp.type === 'year' ? `${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}` : String(d.getDate()).padStart(2, '0')}</div>` : ''}
+          </div>`;
+        });
+      }
+
+      return `<div style="position:relative;width:${W}px;height:${H}px;background:#f7f6f3;color:#141413;font-family:Inter,'Hiragino Sans','Noto Sans JP',sans-serif;overflow:hidden">
+        <div style="position:absolute;left:${P}px;right:${P}px;top:${P}px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-family:'Noto Serif JP',serif;font-size:28px;line-height:36px;letter-spacing:.28em;font-weight:500">hondana</span>
+          <span style="font-size:14px;letter-spacing:.26em;color:#8c8a84">READING RECORD</span>
+        </div>
+        <div style="position:absolute;left:${P}px;right:${P}px;top:${P + 96}px;height:24px;line-height:24px;font-size:15px;letter-spacing:.26em;color:#8c8a84;text-transform:uppercase">${kicker}</div>
+        <div style="position:absolute;left:${P - 6}px;right:${P}px;top:${P + 128}px;height:132px;line-height:132px;font-family:'Noto Serif JP',serif;font-weight:300;font-size:116px;letter-spacing:.03em">${big}</div>
+        <div style="position:absolute;left:${P}px;right:${P}px;top:${P + 304}px;height:26px;line-height:26px;font-size:17px;letter-spacing:.2em;color:#141413">${books.length} BOOKS<span style="color:#c9c6bf;margin:0 16px">/</span>${pages.toLocaleString()} PAGES</div>
+        ${grid}
+        <div style="position:absolute;left:${P}px;right:${P}px;bottom:${P - 10}px;border-top:1px solid #e3e1db;padding-top:24px;display:flex;justify-content:space-between;font-size:13px;letter-spacing:.24em;color:#8c8a84">
+          <span>A PRIVATE MUSEUM OF BOOKS</span><span>${esc(location.host || 'hondana')}</span>
+        </div>
+      </div>`;
+    }
+
+    async function renderPosterPreview() {
+      const token = ++exp.token;
+      const box = $('poster-preview');
+      const [W, H] = FORMATS[exp.fmt];
+      const avail = Math.min(box.parentElement.clientWidth - 48, 420);
+      const pw = Math.max(200, Math.min(avail, 560 * W / H));
+      const scale = pw / W;
+      box.style.width = `${pw}px`; box.style.height = `${H * scale}px`;
+      box.style.overflow = 'hidden'; box.style.background = '#f7f6f3';
+      const html = await buildPoster();
+      if (token !== exp.token) return;
+      box.innerHTML = `<div style="transform:scale(${scale});transform-origin:top left;width:${W}px;height:${H}px">${html}</div>`;
+    }
+
+    async function savePoster() {
+      const btn = $('btn-exp-save');
+      btn.disabled = true; btn.textContent = '作成中…';
+      let host;
+      try {
+        const html = await buildPoster();
+        host = document.createElement('div');
+        host.style.cssText = 'position:fixed;left:-30000px;top:0;pointer-events:none';
+        host.innerHTML = html;
+        document.body.appendChild(host);
+        if (document.fonts && document.fonts.ready) await document.fonts.ready;
+        const canvas = await html2canvas(host.firstElementChild, { scale: 1, backgroundColor: '#f7f6f3', useCORS: true, logging: false });
+        const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+        const name = `hondana_${exp.key}.png`;
+        const file = new File([blob], name, { type: 'image/png' });
+        if (/iPhone|iPad|Android/i.test(navigator.userAgent) && navigator.canShare && navigator.canShare({ files: [file] })) {
+          try { await navigator.share({ files: [file], title: 'hondana' }); return; }
+          catch (e) { if (e.name === 'AbortError') return; }
+        }
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = name; a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+        showToast('画像を保存しました');
+      } catch (e) {
+        console.error(e);
+        showToast('画像の作成に失敗しました', 'error');
+      } finally {
+        if (host) host.remove();
+        btn.disabled = false; btn.textContent = '画像を保存';
+      }
+    }
+
+    $('btn-open-export').addEventListener('click', () => openExport('month'));
+    $('btn-close-export').addEventListener('click', closeExport);
+    $('export-modal').addEventListener('click', (e) => { if (e.target.id === 'export-modal') closeExport(); });
+    $('exp-type').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-exptype]'); if (!b) return;
+      exp.type = b.dataset.exptype; exp.key = '';
+      syncExportUI(); renderPosterPreview();
+    });
+    $('exp-format').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-expfmt]'); if (!b) return;
+      exp.fmt = b.dataset.expfmt; safeLS.set('hondana_expfmt', exp.fmt);
+      syncExportUI(); renderPosterPreview();
+    });
+    $('exp-period').addEventListener('change', (e) => { exp.key = e.target.value; renderPosterPreview(); });
+    $('exp-titles').addEventListener('change', renderPosterPreview);
+    $('btn-exp-save').addEventListener('click', savePoster);
 
     /* ================= その他 ================= */
     let lastWidth = window.innerWidth;
