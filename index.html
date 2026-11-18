@@ -5,1939 +5,1577 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="theme-color" content="#ffffff">
+  <meta name="theme-color" content="#f5f1ea">
   <title>hondana - デジタル読書記録＆本棚</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
-  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <style>
     :root {
-      --wood-light: #e5e5e5;
-      --wood-dark: #d4d4d4;
+      --paper: #f5f1ea;
+      --ink: #1c1917;
+      --case: #efe6d6;
+      --oak-light: #dcc29b;
+      --oak: #c4a073;
+      --oak-dark: #9c7a50;
     }
-    
     body {
-      font-family: 'Inter', sans-serif;
-      background-color: #f9fafb;
+      font-family: 'Inter', 'Hiragino Sans', sans-serif;
+      background: var(--paper);
+      color: var(--ink);
       -webkit-tap-highlight-color: transparent;
       overscroll-behavior-y: none;
-      -webkit-user-select: none;
-      user-select: none;
     }
-    
-    input, textarea, .floating-phrase-text, .selectable-text {
-      -webkit-user-select: auto;
-      user-select: auto;
-    }
-
     .font-serif-jp { font-family: 'Noto Serif JP', serif; }
-    
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .pt-safe { padding-top: env(safe-area-inset-top); }
 
-    /* 本棚のスタイル */
-    .shelf-row {
+    /* ===== 本棚 ===== */
+    .bookcase {
+      background:
+        linear-gradient(to right, rgba(0,0,0,.06), transparent 6%, transparent 94%, rgba(0,0,0,.06)),
+        var(--case);
+      border: 10px solid var(--oak);
+      border-top-width: 14px;
+      border-radius: 6px;
+      padding: 8px 12px 18px;
+      box-shadow: inset 0 0 24px rgba(80,55,25,.12), 0 18px 30px -18px rgba(60,40,20,.45);
+    }
+    .shelf {
       position: relative;
-      margin-bottom: 2rem;
-      min-height: 180px;
       display: flex;
       align-items: flex-end;
-      justify-content: flex-start;
-      padding: 0 1rem 0.5rem 1rem;
-      border-bottom: 12px solid var(--wood-light);
-      box-shadow: inset 0 -4px 6px -4px rgba(0,0,0,0.1), 0 4px 6px -1px rgba(0,0,0,0.05);
+      gap: 3px;
+      min-height: 210px;
+      padding: 26px 6px 0;
+      margin-bottom: 30px;
     }
-    .shelf-row::after {
+    .shelf::before { /* 棚板の上に落ちる影 */
       content: '';
-      position: absolute;
-      bottom: -12px;
-      left: 0;
-      right: 0;
-      height: 12px;
-      background: var(--wood-dark);
-      z-index: -1;
-    }
-
-    .book-item-cover {
-      perspective: 1000px;
-      margin-right: -10px;
-      transition: transform 0.3s ease, margin 0.3s ease;
-      cursor: pointer;
-    }
-    .book-item-cover:hover {
-      transform: translateY(-10px) translateZ(20px);
-      margin-right: 5px;
-      margin-left: 5px;
-      z-index: 10;
-    }
-    .book-shadow {
-      box-shadow: 
-        -2px 0 5px rgba(0,0,0,0.1),
-        5px 5px 15px rgba(0,0,0,0.15),
-        inset 2px 0 3px rgba(255,255,255,0.3);
-    }
-    .book-spine-hint {
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 4px;
-      background: linear-gradient(to right, rgba(255,255,255,0.6), rgba(255,255,255,0));
-      border-radius: 4px 0 0 4px;
-      z-index: 2;
-    }
-
-    .book-item-spine {
-      position: relative;
-      cursor: pointer;
-      margin-right: 2px;
-      background-color: #ffffff;
-      border: 1px solid #e5e7eb;
-      border-left: 2px solid #f3f4f6;
-      border-right: 2px solid #e5e7eb;
-      box-shadow: 
-        inset 3px 0 5px rgba(255,255,255,0.8),
-        inset -2px 0 3px rgba(0,0,0,0.02),
-        2px 2px 5px rgba(0,0,0,0.08);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding-top: 12px;
-      transition: transform 0.2s ease, filter 0.2s ease;
-      border-radius: 3px;
-    }
-    
-    .book-item-spine:hover {
-      transform: translateY(-5px);
-      z-index: 20;
-    }
-
-    .book-item-spine::before, .book-item-spine::after {
-      content: '';
-      position: absolute;
-      left: 4px;
-      right: 4px;
-      height: 2px;
-      background: rgba(0,0,0,0.05);
-      border-radius: 50%;
-    }
-    .book-item-spine::before { top: 0; }
-    .book-item-spine::after { bottom: 0; }
-
-    .spine-title {
-      writing-mode: vertical-rl;
-      text-orientation: upright;
-      font-family: 'Noto Serif JP', serif;
-      font-size: 12px;
-      color: #111827;
-      letter-spacing: 2px;
-      font-weight: 500;
-      max-height: 85%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      margin-top: 4px;
-      text-shadow: 0.5px 0.5px 0px rgba(255,255,255,0.8);
-    }
-
-    .spine-hover-cover {
-      position: absolute;
-      bottom: 110%;
-      left: 50%;
-      transform: translateX(-50%) translateY(10px);
-      width: 100px;
-      height: 140px;
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      border-radius: 4px;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
-      z-index: 30;
+      position: absolute; left: 0; right: 0; bottom: 0; height: 10px;
+      background: linear-gradient(to top, rgba(60,40,20,.18), transparent);
       pointer-events: none;
     }
-    .book-item-spine:hover .spine-hover-cover {
-      opacity: 1;
-      visibility: visible;
-      transform: translateX(-50%) translateY(0);
+    .shelf::after { /* 棚板 */
+      content: '';
+      position: absolute; left: -12px; right: -12px; bottom: -14px; height: 14px;
+      background: linear-gradient(var(--oak-light), var(--oak) 55%, var(--oak-dark));
+      box-shadow: 0 6px 10px -4px rgba(60,40,20,.35);
+    }
+    .shelf:last-child { margin-bottom: 0; }
+
+    .spine {
+      position: relative;
+      flex-shrink: 0;
+      border-radius: 2px 2px 1px 1px;
+      cursor: pointer;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 18px 0 18px;
+      transition: transform .25s cubic-bezier(.2,.8,.2,1);
+      box-shadow:
+        inset 2px 0 2px rgba(255,255,255,.22),
+        inset -3px 0 5px rgba(0,0,0,.2),
+        1px 0 2px rgba(0,0,0,.18);
+      z-index: 1;
+    }
+    .spine:hover, .spine:focus-visible { transform: translateY(-10px); z-index: 20; outline: none; }
+    .spine .band { position: absolute; left: 0; right: 0; height: 2px; background: currentColor; opacity: .35; }
+    .spine-title {
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      font-family: 'Noto Serif JP', serif;
+      font-weight: 600;
+      letter-spacing: .12em;
+      line-height: 1;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .spine-author {
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      font-size: 9px;
+      letter-spacing: .08em;
+      opacity: .75;
+      max-height: 26%;
+      overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+      margin-top: 6px; flex-shrink: 0;
+    }
+    .ribbon {
+      position: absolute; top: -10px; right: 22%;
+      width: 5px; height: 22px; background: #b3261e;
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
+    }
+    .spine-pop {
+      position: absolute; bottom: calc(100% + 14px); left: 50%;
+      transform: translateX(-50%) translateY(6px);
+      width: 104px; opacity: 0; pointer-events: none;
+      transition: opacity .2s, transform .2s;
+    }
+    @media (hover: hover) {
+      .spine:hover .spine-pop { opacity: 1; transform: translateX(-50%) translateY(0); }
     }
 
-    /* モーダル等アニメーション */
-    .modal-enter { opacity: 0; transform: scale(0.95) translateY(10px); }
-    .modal-enter-active { opacity: 1; transform: scale(1) translateY(0); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-    .modal-exit { opacity: 1; transform: scale(1) translateY(0); }
-    .modal-exit-active { opacity: 0; transform: scale(0.95) translateY(10px); transition: all 0.2s ease-in; }
+    .face { flex-shrink: 0; cursor: pointer; transition: transform .25s cubic-bezier(.2,.8,.2,1); position: relative; }
+    .face:hover { transform: translateY(-8px) rotate(-1deg); z-index: 5; }
 
-    .toast-enter { transform: translateY(100%); opacity: 0; }
-    .toast-enter-active { transform: translateY(0); opacity: 1; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-    .toast-exit { transform: translateY(0); opacity: 1; }
-    .toast-exit-active { transform: translateY(100%); opacity: 0; transition: all 0.2s ease-in; }
-    
-    /* 背景スタイル */
-    .bg-space {
-      background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+    /* ===== 表紙 ===== */
+    .cover {
+      position: relative;
+      aspect-ratio: 2 / 3;
+      overflow: hidden;
+      border-radius: 2px 4px 4px 2px;
+      container-type: inline-size;
+      box-shadow: -1px 0 0 rgba(0,0,0,.08), 4px 6px 14px rgba(40,30,20,.25);
+      background: #ddd;
     }
-    .bg-serendipity {
-      background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+    .cover::after { /* 背の折り目 */
+      content: ''; position: absolute; top: 0; bottom: 0; left: 4%; width: 2px;
+      background: linear-gradient(to right, rgba(0,0,0,.12), rgba(255,255,255,.25));
+      pointer-events: none;
     }
-    
+    .cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .gen-cover {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; justify-content: space-between;
+      padding: 14cqw 11cqw 11cqw 14cqw;
+      font-family: 'Noto Serif JP', serif;
+    }
+    .gen-cover .gc-title { font-size: 11.5cqw; font-weight: 700; line-height: 1.35; word-break: break-word; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+    .gen-cover .gc-rule { width: 22cqw; height: 1px; background: currentColor; opacity: .5; margin: 6cqw 0; }
+    .gen-cover .gc-author { font-size: 7.5cqw; opacity: .8; line-height: 1.4; }
+
+    /* ===== モーダル・トースト ===== */
+    .modal-panel { transform: translateY(16px) scale(.98); opacity: 0; transition: transform .3s cubic-bezier(.16,1,.3,1), opacity .2s; }
+    .modal-open .modal-panel { transform: none; opacity: 1; }
+    .toast { transform: translateY(16px); opacity: 0; transition: all .3s cubic-bezier(.16,1,.3,1); }
+    .toast.show { transform: none; opacity: 1; }
+
+    input[type=range] { accent-color: #1c1917; }
+
+    /* ===== マップ ===== */
+    .bg-space { background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%); }
     #map-container { touch-action: none; }
 
-    /* セレンディピティ フレーズカード */
+    /* ===== セレンディピティ ===== */
+    .bg-serendipity { background: linear-gradient(135deg, #fbf9f5 0%, #ece8e1 100%); }
     .floating-phrase {
-      position: absolute;
-      top: 0; left: 0;
-      width: max-content;
-      max-width: 400px;
-      padding: 1.25rem 1.5rem;
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.6);
-      border-radius: 16px;
-      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-      cursor: pointer;
-      will-change: transform;
-      z-index: 10;
-      transition: box-shadow 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+      position: absolute; top: 0; left: 0;
+      width: max-content; max-width: min(360px, 80vw);
+      padding: 1.1rem 1.3rem;
+      background: rgba(255,255,255,.82);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,.7);
+      border-radius: 14px;
+      box-shadow: 0 8px 30px rgba(60,45,30,.08);
+      cursor: pointer; will-change: transform; z-index: 10;
+      transition: box-shadow .3s, border-color .3s, background .3s;
     }
-    .floating-phrase:hover {
-      z-index: 50 !important;
-      background: rgba(255, 255, 255, 0.95);
-      box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.15);
-      border-color: rgba(99, 102, 241, 0.3);
-    }
-    .floating-phrase-text {
-      font-family: 'Noto Serif JP', serif;
-      font-size: 0.9rem;
-      color: #1f2937;
-      line-height: 1.8;
-      font-weight: 400;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-    .floating-phrase-meta {
-      font-size: 0.65rem;
-      color: #6b7280;
-      text-align: right;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 4px;
-      max-height: 0;
-      opacity: 0;
-      margin-top: 0;
-      overflow: hidden;
-      transition: max-height 0.3s ease, opacity 0.3s ease, margin-top 0.3s ease;
-    }
-    .floating-phrase:hover .floating-phrase-meta {
-      max-height: 30px;
-      opacity: 1;
-      margin-top: 0.75rem;
-    }
-    
-    .suggestions-scroll::-webkit-scrollbar { width: 6px; }
-    .suggestions-scroll::-webkit-scrollbar-track { background: transparent; }
-    .suggestions-scroll::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 3px; }
+    .floating-phrase:hover { z-index: 50 !important; background: rgba(255,255,255,.96); box-shadow: 0 12px 40px rgba(60,45,30,.16); border-color: rgba(180,140,90,.35); }
+    .floating-phrase-text { font-family: 'Noto Serif JP', serif; font-size: .9rem; line-height: 1.85; white-space: pre-wrap; word-break: break-word; }
+    .floating-phrase-meta { font-size: .68rem; color: #78716c; text-align: right; max-height: 0; opacity: 0; overflow: hidden; transition: all .3s; }
+    .floating-phrase:hover .floating-phrase-meta { max-height: 30px; opacity: 1; margin-top: .6rem; }
   </style>
 
   <script>
-    /* STREAMING_CHUNK:Initializing PWA setup... */
     (function initPWA() {
-      const manifestJSON = {
-        "name": "hondana - デジタル読書記録",
-        "short_name": "hondana",
-        "start_url": ".",
-        "display": "standalone",
-        "background_color": "#f9fafb",
-        "theme_color": "#ffffff",
-        "icons": [
-          { "src": "https://placehold.co/192x192/111827/ffffff?text=h", "sizes": "192x192", "type": "image/png" },
-          { "src": "https://placehold.co/512x512/111827/ffffff?text=h", "sizes": "512x512", "type": "image/png" }
+      const manifest = {
+        name: "hondana - デジタル読書記録", short_name: "hondana", start_url: ".",
+        display: "standalone", background_color: "#f5f1ea", theme_color: "#f5f1ea",
+        icons: [
+          { src: "https://placehold.co/192x192/1c1917/f5f1ea?text=h", sizes: "192x192", type: "image/png" },
+          { src: "https://placehold.co/512x512/1c1917/f5f1ea?text=h", sizes: "512x512", type: "image/png" }
         ]
       };
-      const manifestBlob = new Blob([JSON.stringify(manifestJSON)], { type: 'application/manifest+json' });
-      const manifestURL = URL.createObjectURL(manifestBlob);
       const link = document.createElement('link');
       link.rel = 'manifest';
-      link.href = manifestURL;
+      link.href = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' }));
       document.head.appendChild(link);
     })();
   </script>
 </head>
-<body class="min-h-screen flex flex-col text-gray-800">
+<body class="min-h-screen flex flex-col">
 
   <!-- Header -->
-  <header class="bg-white/85 backdrop-blur-md border-b border-gray-100 sticky top-0 z-30 pt-safe">
+  <header class="bg-[#f5f1ea]/85 backdrop-blur-md border-b border-stone-200/70 sticky top-0 z-30 pt-safe">
     <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-      <div class="flex items-center gap-2">
-        <h1 class="text-xl font-bold tracking-tight text-gray-900">hondana</h1>
-      </div>
-      <div class="flex items-center gap-3">
-        <!-- ログインボタングループ -->
-        <div id="auth-container" class="flex items-center gap-2 mr-1">
-          <button id="btn-login" class="text-xs font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 px-3 py-1.5 rounded-full transition shadow-sm flex items-center gap-1.5">
-            <i class="ph-fill ph-google-logo text-gray-700"></i> <span class="hidden sm:inline">ログイン</span>
+      <h1 class="text-xl font-bold tracking-tight font-serif-jp">hondana</h1>
+      <div class="flex items-center gap-2 sm:gap-3">
+        <div id="auth-container" class="flex items-center gap-2">
+          <button id="btn-login" class="text-xs font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 px-3 py-1.5 rounded-full transition shadow-sm flex items-center gap-1.5">
+            <i class="ph-fill ph-google-logo"></i><span class="hidden sm:inline">ログイン</span>
           </button>
-          
           <div id="user-info" class="hidden items-center gap-2">
-            <img id="user-avatar" src="" alt="User Avatar" class="w-8 h-8 rounded-full border border-gray-200 object-cover">
-            <button id="btn-logout" class="text-xs text-gray-500 hover:text-gray-900 transition" title="ログアウト">
-              <i class="ph ph-sign-out text-lg"></i>
-            </button>
+            <img id="user-avatar" src="" alt="" class="w-8 h-8 rounded-full border border-stone-200 object-cover">
+            <button id="btn-logout" class="text-stone-500 hover:text-stone-900 transition" title="ログアウト"><i class="ph ph-sign-out text-lg"></i></button>
           </div>
         </div>
-
-        <button id="btn-share" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition" title="共有">
+        <button id="btn-share" class="w-9 h-9 flex items-center justify-center rounded-full text-stone-600 hover:bg-stone-200/60 transition" title="本棚を共有">
           <i class="ph ph-share-network text-lg"></i>
         </button>
-        <button id="btn-add-book" class="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-full text-sm font-medium transition shadow-sm">
-          <i class="ph ph-plus-bold"></i> <span class="hidden sm:inline">本を追加</span>
+        <button id="btn-add-book" class="flex items-center gap-2 bg-stone-900 hover:bg-stone-700 text-white px-4 py-2 rounded-full text-sm font-medium transition shadow-sm">
+          <i class="ph ph-plus-bold"></i><span class="hidden sm:inline">本を追加</span>
         </button>
       </div>
     </div>
   </header>
 
-  <main class="flex-1 max-w-5xl mx-auto w-full px-4 py-6 flex flex-col">
-    
-    <!-- Navigation Tabs -->
-    <div class="flex gap-6 mb-6 border-b border-gray-100 overflow-x-auto no-scrollbar">
-      <button id="tab-bookshelf" class="pb-3 text-sm font-medium text-gray-900 border-b-2 border-gray-900 transition -mb-[1px] whitespace-nowrap">Bookshelf</button>
-      <button id="tab-phrases" class="pb-3 text-sm font-medium text-gray-400 hover:text-gray-900 border-b-2 border-transparent transition -mb-[1px] whitespace-nowrap">Phrases</button>
-      <button id="tab-mapping" class="pb-3 text-sm font-medium text-gray-400 hover:text-gray-900 border-b-2 border-transparent transition -mb-[1px] whitespace-nowrap"><i class="ph ph-planet text-base align-middle"></i> Knowledge Map</button>
-      <button id="tab-serendipity" class="pb-3 text-sm font-medium text-gray-400 hover:text-gray-900 border-b-2 border-transparent transition -mb-[1px] whitespace-nowrap"><i class="ph ph-sparkle text-base align-middle"></i> Serendipity</button>
+  <!-- 共有閲覧時のバナー -->
+  <div id="portfolio-banner" class="hidden bg-stone-900 text-stone-100 text-xs">
+    <div class="max-w-5xl mx-auto px-4 py-2 flex items-center justify-between gap-3">
+      <span id="portfolio-banner-text" class="flex items-center gap-2"><i class="ph ph-eye"></i>共有された本棚を閲覧しています</span>
+      <a href="./" class="underline underline-offset-2 whitespace-nowrap">自分の本棚へ</a>
     </div>
+  </div>
 
-    <!-- Bookshelf View -->
-    <div id="view-bookshelf" class="flex-1 flex flex-col">
-      <div class="flex flex-col gap-3 mb-6 border-b border-gray-100 pb-3">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-          <div class="flex gap-4">
-            <button class="filter-btn active text-sm font-medium text-gray-900 border-b-2 border-gray-900 pb-2 -mb-[13px]" data-filter="all">すべて <span id="count-all" class="ml-1 text-xs text-gray-500">0</span></button>
-            <button class="filter-btn text-sm font-medium text-gray-400 hover:text-gray-900 border-b-2 border-transparent pb-2 -mb-[13px] transition" data-filter="read">読了 <span id="count-read" class="ml-1 text-xs text-gray-400">0</span></button>
-            <button class="filter-btn text-sm font-medium text-gray-400 hover:text-gray-900 border-b-2 border-transparent pb-2 -mb-[13px] transition" data-filter="reading">読書中 <span id="count-reading" class="ml-1 text-xs text-gray-400">0</span></button>
-            <button class="filter-btn text-sm font-medium text-gray-400 hover:text-gray-900 border-b-2 border-transparent pb-2 -mb-[13px] transition" data-filter="wish">読みたい <span id="count-wish" class="ml-1 text-xs text-gray-400">0</span></button>
-          </div>
-          
-          <div class="flex items-center gap-2">
-            <div class="flex bg-gray-100 rounded-lg p-1 mr-2">
-              <button id="btn-view-spine" class="w-8 h-8 flex items-center justify-center rounded-md bg-white shadow-sm text-gray-900 transition" title="背表紙ビュー">
-                <i class="ph ph-books text-lg"></i>
-              </button>
-              <button id="btn-view-cover" class="w-8 h-8 flex items-center justify-center rounded-md text-gray-400 hover:text-gray-900 transition" title="表紙ビュー">
-                <i class="ph ph-squares-four text-lg"></i>
-              </button>
+  <main class="flex-1 max-w-5xl mx-auto w-full px-4 py-6 flex flex-col">
+
+    <!-- Tabs -->
+    <nav class="flex gap-6 mb-6 border-b border-stone-200 overflow-x-auto no-scrollbar">
+      <button data-tab="bookshelf" class="tab-btn pb-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap transition">Bookshelf</button>
+      <button data-tab="phrases" class="tab-btn pb-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap transition">Phrases</button>
+      <button data-tab="mapping" class="tab-btn pb-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap transition"><i class="ph ph-planet align-middle"></i> Knowledge Map</button>
+      <button data-tab="serendipity" class="tab-btn pb-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap transition"><i class="ph ph-sparkle align-middle"></i> Serendipity</button>
+    </nav>
+
+    <!-- ===== Bookshelf ===== -->
+    <section id="view-bookshelf" class="view flex-1 flex flex-col">
+      <div id="stats" class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6"></div>
+
+      <div class="flex flex-col gap-3 mb-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div id="status-filters" class="flex bg-stone-200/60 rounded-full p-1 text-sm max-w-full overflow-x-auto no-scrollbar"></div>
+          <div class="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
+            <div class="relative flex-1 sm:flex-none min-w-0">
+              <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"></i>
+              <input id="shelf-search" type="search" placeholder="本棚を検索" class="w-full sm:w-48 bg-white border border-stone-200 rounded-full pl-8 pr-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-stone-300">
+            </div>
+            <select id="shelf-sort" class="w-32 sm:w-auto shrink-0 bg-white border border-stone-200 rounded-full px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-stone-300">
+              <option value="shelf">読み始め順</option>
+              <option value="recent">追加が新しい順</option>
+              <option value="finished">読了が新しい順</option>
+              <option value="genre">ジャンル順</option>
+              <option value="title">タイトル順</option>
+              <option value="rating">評価順</option>
+            </select>
+            <div class="flex bg-stone-200/60 rounded-full p-1 shrink-0">
+              <button data-view="spine" class="view-btn w-8 h-8 flex items-center justify-center rounded-full transition" title="背表紙"><i class="ph ph-books text-lg"></i></button>
+              <button data-view="cover" class="view-btn w-8 h-8 flex items-center justify-center rounded-full transition" title="表紙"><i class="ph ph-squares-four text-lg"></i></button>
             </div>
           </div>
         </div>
-
-        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pt-2 pb-1" id="genre-tabs-container"></div>
+        <div id="genre-chips" class="flex items-center gap-2 overflow-x-auto no-scrollbar"></div>
       </div>
 
-      <div id="bookshelf-container" class="flex-1 pb-20 flex flex-col"></div>
-
+      <div id="bookshelf-container" class="pb-16"></div>
       <div id="empty-state" class="hidden flex-col items-center justify-center py-20 text-center">
-        <i class="ph ph-books text-4xl text-gray-300 mb-4"></i>
-        <h2 class="text-lg font-medium text-gray-900 mb-2">本棚は空です</h2>
-        <p class="text-sm text-gray-500 mb-6 max-w-md font-serif-jp">右上から本を追加して<br>あなたの本棚を作り始めましょう。</p>
+        <i class="ph ph-books text-5xl text-stone-300 mb-4"></i>
+        <h2 id="empty-title" class="text-lg font-medium mb-2 font-serif-jp">本棚は空です</h2>
+        <p id="empty-text" class="text-sm text-stone-500 max-w-md font-serif-jp leading-relaxed">右上の「本を追加」から、<br>あなたの本棚を作り始めましょう。</p>
       </div>
-    </div>
+    </section>
 
-    <!-- Phrases View -->
-    <div id="view-phrases" class="hidden flex-1 flex-col pb-20">
-      <div id="phrase-form-container" class="mb-6 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
-        <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><i class="ph-fill ph-quotes text-lg text-indigo-500"></i> 新しいフレーズを記録</h3>
-        <form id="phrase-form" class="flex flex-col gap-3" onsubmit="return false;">
+    <!-- ===== Phrases ===== -->
+    <section id="view-phrases" class="view hidden flex-1 flex-col pb-20">
+      <div id="phrase-form-container" class="mb-6 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-stone-200/70">
+        <h3 id="phrase-form-title" class="text-sm font-bold mb-4 flex items-center gap-2"><i class="ph-fill ph-quotes text-lg text-amber-700"></i> 新しいフレーズを記録</h3>
+        <form id="phrase-form" class="flex flex-col gap-3">
           <div class="flex flex-col sm:flex-row gap-3">
-            <select id="phrase-book-select" class="flex-1 bg-gray-50 border-none rounded-lg p-3 text-sm focus:ring-2 focus:ring-gray-200 outline-none text-gray-700 font-medium">
-              <option value="">書籍を選択 (任意)</option>
-            </select>
-            <input type="number" id="phrase-page" placeholder="ページ数" class="w-full sm:w-32 bg-gray-50 border-none rounded-lg p-3 text-sm focus:ring-2 focus:ring-gray-200 outline-none text-gray-700">
+            <select id="phrase-book-select" class="flex-1 bg-stone-50 rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-stone-200"></select>
+            <input type="number" id="phrase-page" min="1" placeholder="ページ" class="w-full sm:w-28 bg-stone-50 rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-stone-200">
           </div>
-          <div class="flex flex-col sm:flex-row gap-3 items-end">
-            <textarea id="phrase-text" placeholder="心に残ったフレーズや引用を入力..." class="flex-1 w-full bg-gray-50 border-none rounded-lg p-3 text-sm focus:ring-2 focus:ring-gray-200 outline-none text-gray-800 resize-none font-serif-jp h-24 leading-relaxed" required></textarea>
-            <button type="submit" id="btn-add-phrase" class="w-full sm:w-auto bg-gray-900 hover:bg-gray-800 text-white px-6 py-3 rounded-lg text-sm font-medium transition whitespace-nowrap shadow-sm h-12 flex items-center justify-center gap-2">
-              <i class="ph ph-plus-bold"></i> 記録する
+          <textarea id="phrase-text" placeholder="心に残ったフレーズや引用を入力..." class="w-full bg-stone-50 rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-stone-200 resize-none font-serif-jp h-24 leading-relaxed"></textarea>
+          <div class="flex justify-end gap-2">
+            <button type="button" id="btn-cancel-phrase" class="hidden px-4 py-2.5 rounded-lg text-sm text-stone-500 hover:bg-stone-100 transition">キャンセル</button>
+            <button type="submit" id="btn-add-phrase" class="bg-stone-900 hover:bg-stone-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition flex items-center gap-2">
+              <i class="ph ph-plus-bold"></i><span>記録する</span>
             </button>
           </div>
         </form>
       </div>
-      
-      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar mb-4" id="phrases-genre-tabs-container"></div>
-      <div id="phrases-list" class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6"></div>
-      <div id="phrases-empty-state" class="hidden flex-col items-center justify-center py-16 text-center">
-        <i class="ph ph-quotes text-4xl text-gray-300 mb-3"></i>
-        <p class="text-sm text-gray-500 font-serif-jp" id="phrases-empty-message">まだフレーズが記録されていません。</p>
-      </div>
-    </div>
 
-    <!-- Mapping View (思考の星座) -->
-    <div id="view-mapping" class="hidden flex-1 flex-col h-[calc(100vh-200px)] min-h-[500px]">
+      <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+        <div id="phrase-chips" class="flex items-center gap-2 overflow-x-auto no-scrollbar flex-1"></div>
+        <div class="relative">
+          <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"></i>
+          <input id="phrase-search" type="search" placeholder="フレーズを検索" class="w-full sm:w-52 bg-white border border-stone-200 rounded-full pl-8 pr-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-stone-300">
+        </div>
+      </div>
+      <div id="phrases-list" class="columns-1 md:columns-2 gap-5"></div>
+      <div id="phrases-empty" class="hidden flex-col items-center justify-center py-16 text-center">
+        <i class="ph ph-quotes text-4xl text-stone-300 mb-3"></i>
+        <p id="phrases-empty-msg" class="text-sm text-stone-500 font-serif-jp">まだフレーズが記録されていません。</p>
+      </div>
+    </section>
+
+    <!-- ===== Knowledge Map ===== -->
+    <section id="view-mapping" class="view hidden flex-1 flex-col h-[calc(100vh-200px)] min-h-[500px]">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
-        <p class="text-sm text-gray-500 hidden md:block">本と本を線で結び、あなただけの「思考の星座」を描きましょう。</p>
-        <div class="flex items-center gap-2 ml-auto w-full sm:w-auto justify-end">
-          <button id="btn-export-map" class="text-sm font-medium px-4 py-2 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-1.5 shadow-sm whitespace-nowrap">
-            <i class="ph ph-download-simple text-lg"></i> <span class="hidden sm:inline">画像保存</span>
+        <p id="map-hint" class="text-sm text-stone-500">本と本を線で結び、あなただけの「思考の星座」を描きましょう。</p>
+        <div class="flex items-center gap-2 ml-auto">
+          <button id="btn-export-map" class="text-sm font-medium px-4 py-2 rounded-full bg-white border border-stone-200 hover:bg-stone-50 transition flex items-center gap-1.5">
+            <i class="ph ph-download-simple text-lg"></i><span class="hidden sm:inline">画像保存</span>
           </button>
-          <button id="btn-connect-mode" class="text-sm font-medium px-4 py-2 rounded-full bg-slate-800 text-white hover:bg-slate-700 transition flex items-center gap-2 whitespace-nowrap shadow-sm">
-            <i class="ph ph-git-merge text-lg"></i> <span>Connect: OFF</span>
+          <button id="btn-connect-mode" class="text-sm font-medium px-4 py-2 rounded-full bg-slate-800 text-white hover:bg-slate-700 transition flex items-center gap-2">
+            <i class="ph ph-git-merge text-lg"></i><span>Connect: OFF</span>
           </button>
         </div>
       </div>
-      <!-- 宇宙空間風の背景 -->
-      <div id="map-container" class="relative flex-1 bg-space rounded-2xl overflow-auto shadow-inner border border-slate-800 cursor-grab">
-        <div id="map-content" class="relative min-w-[1000px] min-h-[600px] p-8">
+      <div id="map-container" class="relative flex-1 bg-space rounded-2xl overflow-auto shadow-inner cursor-grab">
+        <div id="map-content" class="relative min-w-[1000px] min-h-[600px]">
           <div id="map-grid" class="absolute inset-0 pointer-events-none"></div>
-          <svg id="map-svg" class="absolute inset-0 w-full h-full pointer-events-none"></svg>
+          <svg id="map-svg" class="absolute inset-0 w-full h-full"></svg>
           <div id="map-nodes" class="absolute inset-0 w-full h-full pointer-events-none"></div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- Serendipity View (セレンディピティ空間) -->
-    <div id="view-serendipity" class="hidden flex-1 flex-col h-[calc(100vh-200px)] min-h-[500px] relative overflow-hidden bg-serendipity rounded-2xl border border-gray-100 shadow-inner">
-      <!-- 線を描画するためのCanvas -->
+    <!-- ===== Serendipity ===== -->
+    <section id="view-serendipity" class="view hidden flex-1 flex-col h-[calc(100vh-200px)] min-h-[500px] relative overflow-hidden bg-serendipity rounded-2xl border border-stone-200/70 shadow-inner">
       <canvas id="serendipity-canvas" class="absolute inset-0 w-full h-full z-0 pointer-events-none"></canvas>
       <div id="serendipity-container" class="absolute inset-0 w-full h-full z-10"></div>
-      
-      <div id="serendipity-empty-state" class="hidden absolute inset-0 flex-col items-center justify-center text-center z-20">
-        <i class="ph ph-sparkle text-4xl text-gray-300 mb-3"></i>
-        <p class="text-sm text-gray-500 font-serif-jp mb-2">まだフレーズが記録されていません。</p>
-        <p class="text-xs text-gray-400">フレーズを追加して、インスピレーションの海を漂わせましょう。</p>
+      <div id="serendipity-empty" class="hidden absolute inset-0 flex-col items-center justify-center text-center z-20">
+        <i class="ph ph-sparkle text-4xl text-stone-300 mb-3"></i>
+        <p class="text-sm text-stone-500 font-serif-jp mb-2">まだフレーズが記録されていません。</p>
+        <p class="text-xs text-stone-400">フレーズを追加して、インスピレーションの海を漂わせましょう。</p>
       </div>
-      <div class="absolute bottom-4 right-4 z-30 pointer-events-none">
-         <span class="text-xs font-medium text-indigo-500 bg-white/80 px-2.5 py-1.5 rounded-md backdrop-blur border border-indigo-100 shadow-sm flex items-center gap-1.5"><i class="ph-fill ph-magic-wand text-indigo-400"></i> Serendipity Space</span>
+      <div class="absolute bottom-4 right-4 z-30 flex items-center gap-2">
+        <button id="btn-shuffle" class="text-xs font-medium text-stone-700 bg-white/85 hover:bg-white px-3 py-1.5 rounded-full backdrop-blur border border-stone-200 shadow-sm flex items-center gap-1.5 transition">
+          <i class="ph ph-shuffle"></i> シャッフル
+        </button>
       </div>
-    </div>
+    </section>
   </main>
 
-  <!-- Book Detail & Add Modal -->
-  <div id="modal-detail" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex-col items-center pt-10 pb-10 px-4 overflow-y-auto">
-    <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col min-h-[500px] modal-enter relative my-auto" id="modal-detail-content">
-      <button id="btn-close-detail" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100/80 text-gray-500 hover:bg-gray-200 transition z-10">
+  <!-- ===== Book Modal ===== -->
+  <div id="modal" class="fixed inset-0 z-50 hidden justify-center items-start sm:items-center bg-stone-900/40 backdrop-blur-sm overflow-y-auto sm:p-6">
+    <div id="modal-panel" class="modal-panel bg-white w-full sm:max-w-3xl sm:rounded-2xl shadow-2xl relative min-h-screen sm:min-h-0 my-auto">
+      <button id="btn-close-modal" class="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-stone-100 text-stone-500 hover:bg-stone-200 transition z-10" aria-label="閉じる">
         <i class="ph ph-x text-lg"></i>
       </button>
 
-      <div class="flex flex-col md:flex-row h-full">
-        <!-- Left -->
-        <div class="w-full md:w-2/5 bg-gray-50 p-6 flex flex-col items-center border-r border-gray-100 rounded-l-2xl relative z-10">
-          <div class="w-32 md:w-40 aspect-[2/3] bg-white rounded-md shadow-md mb-4 relative group cursor-pointer" id="detail-cover-wrapper">
-            <img id="detail-cover" src="" alt="Cover" class="w-full h-full object-cover rounded-md">
-            <div class="absolute inset-0 bg-black/50 rounded-md opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-              <i class="ph ph-pencil-simple text-white text-2xl"></i>
+      <div class="grid md:grid-cols-[250px_1fr]">
+        <!-- 左 -->
+        <aside class="bg-stone-50 p-6 pt-10 flex flex-col items-center gap-4 md:border-r border-stone-100 sm:rounded-tl-2xl md:rounded-bl-2xl">
+          <div id="detail-cover" class="w-36 md:w-44"></div>
+
+          <div id="cover-tools" class="w-full">
+            <button id="btn-cover-toggle" class="w-full text-xs text-stone-500 hover:text-stone-900 flex items-center justify-center gap-1.5 py-1 transition">
+              <i class="ph ph-image"></i> 表紙を変更
+            </button>
+            <div id="cover-edit" class="hidden mt-2 space-y-2">
+              <input type="text" id="detail-cover-url" placeholder="画像URLを貼り付け" class="w-full bg-white border border-stone-200 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-stone-200">
+              <div class="flex gap-2">
+                <label class="flex-1 cursor-pointer text-center text-xs bg-white border border-stone-200 hover:bg-stone-100 rounded-lg py-2 transition">
+                  <i class="ph ph-upload-simple"></i> 写真から選ぶ
+                  <input type="file" id="detail-cover-file" accept="image/*" class="hidden">
+                </label>
+                <button id="btn-cover-clear" class="text-xs text-stone-500 hover:text-red-600 px-2 transition">外す</button>
+              </div>
+              <p class="text-[10px] text-stone-400 leading-relaxed">表紙がないときは、タイトルから自動で装丁を作ります。</p>
             </div>
           </div>
-          
-          <div id="cover-edit-container" class="w-full mb-4 hidden">
-            <label class="block text-xs font-medium text-gray-500 mb-1">表紙画像URL</label>
-            <input type="text" id="detail-cover-url" class="w-full bg-white border border-gray-200 rounded-lg p-2 text-xs focus:ring-2 focus:ring-gray-200 outline-none text-gray-700" placeholder="https://...">
+
+          <div class="w-full">
+            <label class="block text-xs font-medium text-stone-400 mb-1.5">ステータス</label>
+            <div id="status-seg" class="grid grid-cols-3 bg-stone-200/60 rounded-lg p-1 text-xs font-medium">
+              <button data-status="wish" class="py-1.5 rounded-md transition">読みたい</button>
+              <button data-status="reading" class="py-1.5 rounded-md transition">読書中</button>
+              <button data-status="read" class="py-1.5 rounded-md transition">読了</button>
+            </div>
           </div>
 
-          <div class="w-full mb-3 relative">
-            <label class="block text-xs font-medium text-gray-400 mb-1">タイトル <span class="text-[10px] text-indigo-400 font-normal ml-1">(サジェスト検索対応)</span></label>
-            <input type="text" id="detail-title-input" placeholder="書籍名を入力..." autocomplete="off" class="w-full bg-white border border-gray-200 rounded-lg p-2 text-sm font-bold text-gray-900 font-serif-jp focus:ring-2 focus:ring-gray-200 outline-none">
-            
-            <div id="title-suggestions" class="absolute z-[60] top-full left-0 w-full mt-1 bg-white border border-gray-100 rounded-lg shadow-xl max-h-60 overflow-y-auto hidden suggestions-scroll"></div>
+          <div id="progress-block" class="w-full hidden">
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-xs font-medium text-stone-400">進み具合</label>
+              <span id="progress-label" class="text-xs font-medium text-stone-600"></span>
+            </div>
+            <input type="range" id="detail-current-range" min="0" max="250" value="0" class="w-full">
+            <div class="flex items-center gap-2 mt-1">
+              <input type="number" id="detail-current" min="0" class="w-20 bg-white border border-stone-200 rounded-lg p-1.5 text-xs outline-none">
+              <span class="text-xs text-stone-400">ページまで読んだ</span>
+            </div>
+          </div>
+        </aside>
+
+        <!-- 右 -->
+        <section class="p-6 flex flex-col gap-4">
+          <div class="pr-10">
+            <input type="text" id="detail-title" placeholder="タイトル" autocomplete="off" class="w-full bg-transparent text-xl font-bold font-serif-jp outline-none border-b border-transparent focus:border-stone-300 pb-1 placeholder:text-stone-300">
+            <input type="text" id="detail-author" placeholder="著者名" autocomplete="off" class="w-full bg-transparent text-sm text-stone-600 outline-none border-b border-transparent focus:border-stone-300 pb-1 mt-1 placeholder:text-stone-300">
           </div>
 
-          <div class="w-full mb-4">
-            <label class="block text-xs font-medium text-gray-400 mb-1">著者名</label>
-            <input type="text" id="detail-author-input" class="w-full bg-white border border-gray-200 rounded-lg p-2 text-sm text-gray-700 focus:ring-2 focus:ring-gray-200 outline-none">
-          </div>
-
-          <div class="w-full flex flex-col gap-3">
+          <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-medium text-gray-400 mb-1">Status</label>
-              <select id="detail-status" class="w-full bg-white border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-gray-200 outline-none text-gray-700 font-medium">
-                <option value="read">読了</option>
-                <option value="reading">読書中</option>
-                <option value="wish">読みたい</option>
-              </select>
+              <label class="block text-xs font-medium text-stone-400 mb-1">読み始めた日</label>
+              <input type="date" id="detail-start" class="w-full bg-stone-50 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-stone-200">
             </div>
-          </div>
-        </div>
-
-        <!-- Right -->
-        <div class="w-full md:w-3/5 p-6 flex flex-col relative z-0">
-          <div class="flex-1 flex flex-col space-y-4">
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-xs font-medium text-gray-400 mb-1">Start Date</label>
-                <input type="date" id="detail-start-date" class="w-full bg-gray-50 border-none rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-gray-200 outline-none text-gray-700">
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-gray-400 mb-1">End Date</label>
-                <input type="date" id="detail-end-date" class="w-full bg-gray-50 border-none rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-gray-200 outline-none text-gray-700">
-              </div>
+            <div>
+              <label class="block text-xs font-medium text-stone-400 mb-1">読み終えた日</label>
+              <input type="date" id="detail-end" class="w-full bg-stone-50 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-stone-200">
             </div>
-
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-xs font-medium text-gray-400 mb-1">Genre / Category</label>
-                <input type="text" id="detail-genre" placeholder="例: 小説, ビジネス, 哲学..." class="w-full bg-gray-50 border-none rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-gray-200 outline-none text-gray-700">
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-gray-400 mb-1">総ページ数</label>
-                <input type="number" id="detail-pages" placeholder="例: 250" class="w-full bg-gray-50 border-none rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-gray-200 outline-none text-gray-700">
-              </div>
+            <div>
+              <label class="block text-xs font-medium text-stone-400 mb-1">ジャンル</label>
+              <input type="text" id="detail-genre" list="genre-list" placeholder="小説, 建築, 哲学..." class="w-full bg-stone-50 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-stone-200">
+              <datalist id="genre-list"></datalist>
             </div>
-            
-            <div class="flex items-center justify-between pt-3 border-t border-gray-100 mb-1">
-              <label class="block text-xs font-medium text-gray-400">Review & Memo</label>
-              <div class="flex items-center gap-1 text-lg text-gray-300" id="detail-rating-stars"></div>
-              <input type="hidden" id="detail-rating" value="0">
-            </div>
-
-            <div class="flex-1 flex flex-col">
-              <textarea id="detail-memo" class="flex-1 w-full bg-gray-50 border-none rounded-lg p-3 text-sm focus:ring-2 focus:ring-gray-200 outline-none text-gray-800 resize-none font-serif-jp min-h-[150px]" placeholder="感想や心に残ったフレーズを記録..."></textarea>
+            <div>
+              <label class="block text-xs font-medium text-stone-400 mb-1">総ページ数</label>
+              <input type="number" id="detail-pages" min="1" placeholder="250" class="w-full bg-stone-50 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-stone-200">
             </div>
           </div>
 
-          <div class="mt-6 flex gap-3 pt-4 border-t border-gray-100" id="detail-actions">
-            <button id="btn-delete-book" class="px-4 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 transition">削除</button>
+          <div class="flex items-center justify-between pt-3 border-t border-stone-100">
+            <label class="text-xs font-medium text-stone-400">評価と感想</label>
+            <div id="detail-stars" class="flex items-center gap-1 text-xl"></div>
+          </div>
+          <textarea id="detail-memo" placeholder="感想やメモを記録..." class="w-full bg-stone-50 rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-stone-200 resize-none font-serif-jp min-h-[130px] leading-relaxed"></textarea>
+
+          <div id="detail-phrases-wrap" class="pt-3 border-t border-stone-100">
+            <div class="flex items-center justify-between mb-2">
+              <label class="text-xs font-medium text-stone-400 flex items-center gap-1"><i class="ph-fill ph-quotes text-amber-700"></i> この本のフレーズ</label>
+              <span id="detail-phrases-count" class="text-xs text-stone-400"></span>
+            </div>
+            <div id="detail-phrases" class="flex flex-col gap-2 max-h-48 overflow-y-auto mb-2"></div>
+            <div id="detail-phrase-add" class="flex gap-2">
+              <input type="text" id="detail-phrase-text" placeholder="フレーズをすばやく追加" class="flex-1 bg-stone-50 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-stone-200 font-serif-jp">
+              <input type="number" id="detail-phrase-page" placeholder="p." class="w-16 bg-stone-50 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-stone-200">
+              <button id="btn-detail-phrase" class="px-3 rounded-lg bg-stone-100 hover:bg-stone-200 transition" title="追加"><i class="ph ph-plus"></i></button>
+            </div>
+          </div>
+
+          <div id="detail-actions" class="flex gap-3 pt-4 border-t border-stone-100 mt-auto">
+            <button id="btn-delete-book" class="px-4 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition">削除</button>
             <div class="flex-1"></div>
-            <button id="btn-save-book" class="px-6 py-2 rounded-lg bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium transition shadow-sm">保存</button>
+            <button id="btn-cancel-book" class="px-4 py-2 rounded-lg text-sm text-stone-500 hover:bg-stone-100 transition">キャンセル</button>
+            <button id="btn-save-book" class="px-6 py-2 rounded-lg bg-stone-900 hover:bg-stone-700 text-white text-sm font-medium transition">保存</button>
           </div>
-        </div>
+        </section>
       </div>
     </div>
   </div>
 
-  <div id="toast-container" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none"></div>
+  <div id="toast-container" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] flex flex-col items-center gap-2 pointer-events-none"></div>
 
   <script type="module">
-    /* STREAMING_CHUNK:Firebase & App Initialization... */
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    const generateId = () => Math.random().toString(36).substr(2, 9);
-    const escapeHtml = (unsafe) => {
-      if(!unsafe) return '';
-      return unsafe.toString()
-           .replace(/&/g, "&amp;")
-           .replace(/</g, "&lt;")
-           .replace(/>/g, "&gt;")
-           .replace(/"/g, "&quot;")
-           .replace(/'/g, "&#039;");
+    const firebaseConfig = {
+      apiKey: "AIzaSyCDQX0UKzhphBOX7-tfFINgvCVIQa9qyw4",
+      authDomain: "hondana-aa5c1.firebaseapp.com",
+      projectId: "hondana-aa5c1",
+      storageBucket: "hondana-aa5c1.firebasestorage.app",
+      messagingSenderId: "700740460084",
+      appId: "1:700740460084:web:67835a45372862deb4b461",
+      measurementId: "G-M5FDTEZN1T"
     };
 
-    function showToast(message, type = 'success') {
-      const container = document.getElementById('toast-container');
-      const toast = document.createElement('div');
-      const icon = type === 'success' ? '<i class="ph-fill ph-check-circle text-green-500 text-lg"></i>' : 
-                   (type === 'ai' ? '<i class="ph-fill ph-sparkle text-indigo-500 text-lg"></i>' : '<i class="ph-fill ph-warning-circle text-red-500 text-lg"></i>');
-      
-      toast.className = `flex items-center gap-2 bg-white px-4 py-3 rounded-xl shadow-lg border border-gray-100 text-sm font-medium text-gray-800 toast-enter pointer-events-auto z-50`;
-      toast.innerHTML = `${icon} <span>${escapeHtml(message)}</span>`;
-      container.appendChild(toast);
+    /* ================= ユーティリティ ================= */
+    const $ = (id) => document.getElementById(id);
+    const generateId = () => Math.random().toString(36).slice(2, 11);
+    const esc = (v) => (v === undefined || v === null) ? '' : String(v)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    const hashStr = (s) => { let h = 0; for (const ch of String(s)) { h = ((h << 5) - h) + ch.charCodeAt(0); h |= 0; } return Math.abs(h); };
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+    const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+    const genreOf = (b) => (b && b.genre && String(b.genre).trim()) ? String(b.genre).trim() : '未分類';
+    const clean = (obj) => JSON.parse(JSON.stringify(obj));
+    const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 
-      requestAnimationFrame(() => {
-        toast.classList.remove('toast-enter');
-        toast.classList.add('toast-enter-active');
-      });
+    // 布装の本をイメージした色
+    const PALETTE = [
+      { bg: '#2f3e46', fg: '#f1ece2' }, { bg: '#7b2d26', fg: '#f6e9d8' }, { bg: '#3d5a40', fg: '#eef0e2' },
+      { bg: '#d8ccb4', fg: '#2b2620' }, { bg: '#1f2a44', fg: '#e9e4d6' }, { bg: '#9c6b30', fg: '#fbf3e4' },
+      { bg: '#5b4b6b', fg: '#f0eaf4' }, { bg: '#e9e2d3', fg: '#3a3128' }, { bg: '#b5523b', fg: '#fff4ea' },
+      { bg: '#365b6d', fg: '#eaf1f3' }, { bg: '#c9a227', fg: '#2a2410' }, { bg: '#4a4a48', fg: '#eeeae2' },
+      { bg: '#a3b18a', fg: '#26301e' }, { bg: '#f2efe9', fg: '#2b2b2b' }, { bg: '#6d2e46', fg: '#f7e8ee' }
+    ];
+    const colorFor = (b) => PALETTE[hashStr((b.title || '') + '|' + (b.author || '')) % PALETTE.length];
 
-      setTimeout(() => {
-        toast.classList.remove('toast-enter-active');
-        toast.classList.add('toast-exit');
-        requestAnimationFrame(() => toast.classList.add('toast-exit-active'));
-        setTimeout(() => toast.remove(), 200);
-      }, 3000);
+    function coverHtml(b, extraClass = '') {
+      const c = colorFor(b);
+      const img = b.coverUrl ? `<img src="${esc(b.coverUrl)}" alt="" loading="lazy" onerror="this.remove()">` : '';
+      return `<div class="cover ${extraClass}">
+        <div class="gen-cover" style="background:${c.bg};color:${c.fg}">
+          <div><div class="gc-title">${esc(b.title || '無題')}</div><div class="gc-rule"></div></div>
+          <div class="gc-author">${esc(b.author || '')}</div>
+        </div>${img}</div>`;
     }
 
-    const state = {
-      books: [],
-      links: [],
-      phrases: [],
-      currentFilter: 'all',
-      phrasesFilter: 'all',
-      selectedBookId: null,
-      isPortfolioMode: false,
-      viewMode: 'spine',
-      activeTab: 'bookshelf',
-      isConnectMode: false,
-      connectSourceId: null
+    function showToast(message, type = 'success') {
+      const icons = {
+        success: '<i class="ph-fill ph-check-circle text-green-600 text-lg"></i>',
+        error: '<i class="ph-fill ph-warning-circle text-red-500 text-lg"></i>',
+        info: '<i class="ph-fill ph-info text-stone-500 text-lg"></i>'
+      };
+      const el = document.createElement('div');
+      el.className = 'toast flex items-center gap-2 bg-white px-4 py-3 rounded-xl shadow-lg border border-stone-100 text-sm font-medium';
+      el.innerHTML = `${icons[type] || icons.info}<span>${esc(message)}</span>`;
+      $('toast-container').appendChild(el);
+      requestAnimationFrame(() => el.classList.add('show'));
+      setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, 2800);
+    }
+
+    // 画像を表紙サイズに縮小して dataURL にする(Firestoreの容量対策)
+    function resizeImage(file, maxW = 200, maxH = 300) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            const scale = Math.min(maxW / img.width, maxH / img.height, 1);
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL('image/jpeg', 0.78));
+          };
+          img.onerror = reject;
+          img.src = reader.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    /* ================= 状態 ================= */
+    const safeLS = {
+      get(k, fb) { try { const v = localStorage.getItem(k); return v === null ? fb : JSON.parse(v); } catch { return fb; } },
+      set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+      remove(k) { try { localStorage.removeItem(k); } catch {} }
     };
 
-    let serendipityReqId = null;
-    let floatingElements = [];
+    const state = {
+      books: [], links: [], phrases: [],
+      filter: 'all', genre: 'all', query: '', sort: safeLS.get('hondana_sort', 'shelf'),
+      viewMode: safeLS.get('hondana_view', 'spine'),
+      phrasesGenre: 'all', phrasesQuery: '',
+      activeTab: 'bookshelf',
+      isPortfolioMode: false, portfolioOwner: '',
+      isConnectMode: false, connectSourceId: null,
+      selectedBookId: null, draftCover: '', draftRating: 0, draftStatus: 'wish',
+      editingPhraseId: null
+    };
 
-    // ★★★ ここをご自身の Firebase Config に書き換えてください ★★★
-const firebaseConfig = {
-  apiKey: "AIzaSyCDQX0UKzhphBOX7-tfFINgvCVIQa9qyw4",
-  authDomain: "hondana-aa5c1.firebaseapp.com",
-  projectId: "hondana-aa5c1",
-  storageBucket: "hondana-aa5c1.firebasestorage.app",
-  messagingSenderId: "700740460084",
-  appId: "1:700740460084:web:67835a45372862deb4b461",
-  measurementId: "G-M5FDTEZN1T"
-};
-
-    let app, db, auth, currentUser;
+    let app, db, auth, currentUser = null;
     const provider = new GoogleAuthProvider();
 
+    /* ================= 認証・データ ================= */
     async function initApp() {
+      const portfolioId = new URLSearchParams(location.search).get('portfolio');
+      if (portfolioId) enterPortfolioMode();
       try {
         app = initializeApp(firebaseConfig);
         db = getFirestore(app);
         auth = getAuth(app);
-
-        // 認証状態の監視
+        if (portfolioId) {
+          await loadPortfolio(portfolioId);
+          renderAll();
+          return;
+        }
         onAuthStateChanged(auth, async (user) => {
-          if (user) {
-            currentUser = user;
-            updateAuthUI(user);
-            await syncLocalToCloud(); // ローカルデータをクラウドに統合
-            await loadData();
-          } else {
-            currentUser = null;
-            updateAuthUI(null);
-            await loadData(); // ローカルデータのみを読み込む
-          }
-          renderBookshelf();
+          currentUser = user || null;
+          updateAuthUI(currentUser);
+          if (currentUser) await syncLocalToCloud();
+          await loadData();
+          renderAll();
         });
-
       } catch (e) {
-        console.error("Firebase init error:", e);
-        // エラー時はローカルデータで起動
-        await loadData();
-        renderBookshelf();
+        console.error('Firebase init error:', e);
+        loadLocalData();
+        renderAll();
       }
     }
 
-    // ログインボタンの処理
-    document.getElementById('btn-login').addEventListener('click', async () => {
+    function enterPortfolioMode() {
+      state.isPortfolioMode = true;
+      ['btn-add-book', 'btn-share', 'auth-container', 'phrase-form-container', 'btn-connect-mode'].forEach(id => $(id).classList.add('hidden'));
+      $('portfolio-banner').classList.remove('hidden');
+      $('map-hint').textContent = '本と本のつながりを星座として眺められます。';
+    }
+
+    async function loadPortfolio(id) {
       try {
-        showToast('ログイン画面を開きます...', 'info');
+        const snap = await getDoc(doc(db, 'portfolios', id));
+        if (!snap.exists()) { showToast('共有された本棚が見つかりません', 'error'); return; }
+        const data = snap.data();
+        state.books = (data.books || []).map(normalizeBook);
+        state.links = data.links || [];
+        state.phrases = data.phrases || [];
+        state.portfolioOwner = data.ownerName || '';
+        if (state.portfolioOwner) {
+          $('portfolio-banner-text').innerHTML = `<i class="ph ph-eye"></i>${esc(state.portfolioOwner)} さんの本棚を閲覧しています`;
+        }
+      } catch (e) {
+        console.error(e);
+        showToast('共有データを読み込めませんでした', 'error');
+      }
+    }
+
+    $('btn-login').addEventListener('click', async () => {
+      try {
         await signInWithPopup(auth, provider);
-        showToast('ログインしました！', 'success');
-      } catch (error) {
-        console.error("Login failed", error);
+        showToast('ログインしました');
+      } catch (e) {
+        console.error('Login failed', e);
         showToast('ログインに失敗しました', 'error');
       }
     });
 
-    // ログアウトボタンの処理
-    document.getElementById('btn-logout').addEventListener('click', async () => {
+    $('btn-logout').addEventListener('click', async () => {
+      if (!confirm('ログアウトしますか？')) return;
       try {
         await signOut(auth);
-        showToast('ログアウトしました', 'info');
-        // 画面をリロードして状態をクリア
-        setTimeout(() => window.location.reload(), 1000);
-      } catch (error) {
-        showToast('ログアウトに失敗しました', 'error');
-      }
+        location.reload();
+      } catch { showToast('ログアウトに失敗しました', 'error'); }
     });
 
-    // ログイン状態に応じたUIの切り替え
     function updateAuthUI(user) {
-      const btnLogin = document.getElementById('btn-login');
-      const userInfo = document.getElementById('user-info');
-      const userAvatar = document.getElementById('user-avatar');
-
+      $('btn-login').classList.toggle('hidden', !!user);
+      $('btn-login').classList.toggle('flex', !user);
+      $('user-info').classList.toggle('hidden', !user);
+      $('user-info').classList.toggle('flex', !!user);
       if (user) {
-        btnLogin.classList.add('hidden');
-        userInfo.classList.remove('hidden');
-        userInfo.classList.add('flex');
-        userAvatar.src = user.photoURL || `https://placehold.co/100x100/e5e7eb/6b7280?text=${user.displayName ? encodeURIComponent(user.displayName.charAt(0)) : 'U'}`;
-        userAvatar.title = user.displayName || 'ユーザー';
-      } else {
-        btnLogin.classList.remove('hidden');
-        btnLogin.classList.add('flex');
-        userInfo.classList.add('hidden');
-        userInfo.classList.remove('flex');
+        const initial = user.displayName ? encodeURIComponent(user.displayName.charAt(0)) : 'U';
+        $('user-avatar').src = user.photoURL || `https://placehold.co/100x100/e7e5e4/57534e?text=${initial}`;
+        $('user-avatar').title = user.displayName || 'ユーザー';
       }
     }
 
-    // ローカル(未ログイン時)のデータを、ログイン後のクラウドアカウントにマージする
+    function normalizeBook(b) {
+      return {
+        id: b.id || generateId(),
+        title: b.title || '無題',
+        author: b.author || '',
+        coverUrl: b.coverUrl || '',
+        pages: parseInt(b.pages, 10) || 250,
+        currentPage: (b.currentPage === undefined || b.currentPage === null) ? null : parseInt(b.currentPage, 10) || 0,
+        status: ['read', 'reading', 'wish'].includes(b.status) ? b.status : 'read',
+        rating: parseInt(b.rating, 10) || 0,
+        memo: b.memo || '',
+        startDate: b.startDate || '',
+        endDate: b.endDate || '',
+        genre: b.genre || '未分類',
+        addedAt: b.addedAt || Date.now()
+      };
+    }
+
     async function syncLocalToCloud() {
-      if (!currentUser || firebaseConfig.apiKey === "mock") return;
-
-      const localBooks = JSON.parse(localStorage.getItem('hondana_books') || '[]');
-      const localLinks = JSON.parse(localStorage.getItem('hondana_links') || '[]');
-      const localPhrases = JSON.parse(localStorage.getItem('hondana_phrases') || '[]');
-
-      if (localBooks.length === 0 && localPhrases.length === 0) return;
-
-      showToast('ローカルのデータを同期しています...', 'ai');
-
+      const localBooks = safeLS.get('hondana_books', []);
+      const localLinks = safeLS.get('hondana_links', []);
+      const localPhrases = safeLS.get('hondana_phrases', []);
+      if (!localBooks.length && !localPhrases.length && !localLinks.length) return;
+      showToast('この端末のデータをアカウントに同期しています...', 'info');
       try {
-        // クラウドの既存データを取得
-        const booksRef = collection(db, 'users', currentUser.uid, 'books');
-        const cloudBooksSnap = await getDocs(booksRef);
-        const cloudBookIds = new Set(cloudBooksSnap.docs.map(d => d.id));
-
-        // 本棚の同期
-        for (const book of localBooks) {
-          if (!cloudBookIds.has(book.id)) {
-            await setDoc(doc(db, 'users', currentUser.uid, 'books', book.id), book);
-          }
-        }
-
-        // フレーズの同期
-        for (const phrase of localPhrases) {
-          await setDoc(doc(db, 'users', currentUser.uid, 'phrases', phrase.id), phrase);
-        }
-
-        // リンクの同期
-        for (const link of localLinks) {
-          await setDoc(doc(db, 'users', currentUser.uid, 'links', `${link.source}_${link.target}`), link);
-        }
-
-        // 同期完了後はローカルをクリアして重複を防ぐ
-        localStorage.removeItem('hondana_books');
-        localStorage.removeItem('hondana_links');
-        localStorage.removeItem('hondana_phrases');
-        
-        showToast('同期が完了しました！', 'success');
-      } catch(e) {
-        console.error("Sync error", e);
+        const uid = currentUser.uid;
+        const cloudIds = new Set((await getDocs(collection(db, 'users', uid, 'books'))).docs.map(d => d.id));
+        for (const b of localBooks) if (!cloudIds.has(b.id)) await setDoc(doc(db, 'users', uid, 'books', b.id), clean(normalizeBook(b)));
+        for (const p of localPhrases) await setDoc(doc(db, 'users', uid, 'phrases', p.id), clean(p));
+        for (const l of localLinks) await setDoc(doc(db, 'users', uid, 'links', `${l.source}_${l.target}`), clean(l));
+        ['hondana_books', 'hondana_links', 'hondana_phrases'].forEach(k => safeLS.remove(k));
+        showToast('同期が完了しました');
+      } catch (e) {
+        console.error('Sync error', e);
+        showToast('同期に失敗しました。時間をおいて再度お試しください', 'error');
       }
     }
 
-    /* STREAMING_CHUNK:Data Loading Logic... */
     async function loadData() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const portfolioId = urlParams.get('portfolio');
-      
-      // ポートフォリオ（共有）モード
-      if (portfolioId) {
-        state.isPortfolioMode = true;
-        document.getElementById('btn-add-book').classList.add('hidden');
-        document.getElementById('btn-share').classList.add('hidden');
-        document.getElementById('auth-container').classList.add('hidden');
-        
-        try {
-          if(!db || firebaseConfig.apiKey === "mock") throw new Error("DB not init");
-          const docRef = doc(db, 'portfolios', portfolioId);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            state.books = data.books || [];
-            state.links = data.links || [];
-            state.phrases = data.phrases || [];
-          } else {
-            showToast('ポートフォリオが見つかりません', 'error');
-          }
-        } catch (e) {
-          // モックやエラー時のフォールバック
-          showToast('共有データを読み込めませんでした。ローカルデータを表示します。', 'info');
-          loadLocalData();
-        }
-      } 
-      // ログインユーザーモード
-      else if (currentUser && firebaseConfig.apiKey !== "mock") {
-        try {
-          const booksRef = collection(db, 'users', currentUser.uid, 'books');
-          const booksSnap = await getDocs(booksRef);
-          state.books = booksSnap.docs.map(d => d.data());
-          
-          const linksRef = collection(db, 'users', currentUser.uid, 'links');
-          const linksSnap = await getDocs(linksRef);
-          state.links = linksSnap.docs.map(d => d.data());
-          
-          const phrasesRef = collection(db, 'users', currentUser.uid, 'phrases');
-          const phrasesSnap = await getDocs(phrasesRef);
-          state.phrases = phrasesSnap.docs.map(d => d.data());
-        } catch(e) {
-          console.error("Failed to load cloud data", e);
-          loadLocalData();
-        }
-      } 
-      // ゲスト（未ログイン）モード
-      else {
-        loadLocalData();
+      if (!currentUser) { loadLocalData(); return; }
+      try {
+        const uid = currentUser.uid;
+        const [bs, ls, ps] = await Promise.all([
+          getDocs(collection(db, 'users', uid, 'books')),
+          getDocs(collection(db, 'users', uid, 'links')),
+          getDocs(collection(db, 'users', uid, 'phrases'))
+        ]);
+        state.books = bs.docs.map(d => normalizeBook({ id: d.id, ...d.data() }));
+        state.links = ls.docs.map(d => d.data());
+        state.phrases = ps.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (e) {
+        console.error('Failed to load cloud data', e);
+        showToast('クラウドのデータを読み込めませんでした', 'error');
       }
     }
 
     function loadLocalData() {
-      const savedBooks = localStorage.getItem('hondana_books');
-      if (savedBooks) {
-        state.books = JSON.parse(savedBooks);
-      } else {
-        // 初回表示用のモックデータ
-        const now = new Date();
-        const thisYear = now.getFullYear();
-        const thisMonth = String(now.getMonth() + 1).padStart(2, '0');
-        const lastMonth = String(now.getMonth() === 0 ? 12 : now.getMonth()).padStart(2, '0');
-        const lastMonthYear = now.getMonth() === 0 ? thisYear - 1 : thisYear;
+      state.books = safeLS.get('hondana_books', []).map(normalizeBook);
+      state.links = safeLS.get('hondana_links', []);
+      state.phrases = safeLS.get('hondana_phrases', []);
+    }
 
-        state.books = [
-          { id: generateId(), title: "サピエンス全史", author: "ユヴァル・ノア・ハラリ", coverUrl: "https://books.google.com/books/content?id=v-00EAAAQBAJ&printsec=frontcover&img=1&zoom=1", pages: 500, status: "read", rating: 5, memo: "認知革命という概念が視点を変えてくれた。", startDate: `${lastMonthYear}-${lastMonth}-01`, endDate: `${lastMonthYear}-${lastMonth}-20`, addedAt: Date.now() - 86400000*30, genre: "歴史・思想" },
-          { id: generateId(), title: "星の王子さま", author: "サン＝テグジュペリ", coverUrl: "https://books.google.com/books/content?id=s6e5DwAAQBAJ&printsec=frontcover&img=1&zoom=1", pages: 150, status: "read", rating: 5, memo: "「大切なものは目に見えない」。大人になってから読むと全く違う本に感じる。", startDate: `${thisYear}-${thisMonth}-01`, endDate: `${thisYear}-${thisMonth}-03`, addedAt: Date.now(), genre: "文学" }
-        ];
+    function saveLocal() {
+      if (currentUser || state.isPortfolioMode) return;
+      safeLS.set('hondana_books', state.books);
+      safeLS.set('hondana_links', state.links);
+      safeLS.set('hondana_phrases', state.phrases);
+    }
+
+    const canWriteCloud = () => !state.isPortfolioMode && db && currentUser;
+    async function cloudSet(col, id, data) {
+      saveLocal();
+      if (!canWriteCloud()) return;
+      try { await setDoc(doc(db, 'users', currentUser.uid, col, id), clean(data)); }
+      catch (e) { console.error(e); showToast('クラウドへの保存に失敗しました', 'error'); }
+    }
+    async function cloudDelete(col, id) {
+      saveLocal();
+      if (!canWriteCloud()) return;
+      try { await deleteDoc(doc(db, 'users', currentUser.uid, col, id)); }
+      catch (e) { console.error(e); showToast('クラウドからの削除に失敗しました', 'error'); }
+    }
+    const linkId = (l) => `${l.source}_${l.target}`;
+
+    /* ================= 描画まとめ ================= */
+    function renderAll() {
+      renderStats();
+      renderBookshelf();
+      refreshActiveTab();
+    }
+    function refreshActiveTab() {
+      if (state.activeTab === 'phrases') { renderPhraseBookSelect(); renderPhrases(); }
+      else if (state.activeTab === 'mapping') renderMapping();
+      else if (state.activeTab === 'serendipity') initSerendipityView();
+    }
+
+    /* ================= 読書の記録(統計) ================= */
+    const finishDate = (b) => b.endDate ? new Date(b.endDate) : new Date(b.addedAt || Date.now());
+
+    function renderStats() {
+      const el = $('stats');
+      if (!state.books.length) { el.innerHTML = ''; el.classList.add('hidden'); return; }
+      el.classList.remove('hidden');
+      const now = new Date();
+      const y = now.getFullYear();
+      const readThisYear = state.books.filter(b => b.status === 'read' && finishDate(b).getFullYear() === y);
+      const months = Array(12).fill(0);
+      readThisYear.forEach(b => months[finishDate(b).getMonth()]++);
+      const pages = readThisYear.reduce((s, b) => s + (parseInt(b.pages, 10) || 0), 0);
+      const max = Math.max(1, ...months);
+      const reading = state.books.filter(b => b.status === 'reading');
+
+      const bars = months.map((n, i) => `
+        <div class="flex-1 flex flex-col items-center gap-1" title="${i + 1}月: ${n}冊">
+          <div class="w-full flex items-end h-14">
+            <div class="w-full rounded-sm ${i === now.getMonth() ? 'bg-stone-900' : 'bg-stone-300'}" style="height:${n ? Math.max(8, n / max * 100) : 3}%"></div>
+          </div>
+          <span class="text-[9px] ${i === now.getMonth() ? 'text-stone-900 font-semibold' : 'text-stone-400'}">${i + 1}</span>
+        </div>`).join('');
+
+      const readingHtml = reading.length ? reading.slice(0, 3).map(b => {
+        const pct = b.pages ? clamp(Math.round((b.currentPage || 0) / b.pages * 100), 0, 100) : 0;
+        return `<button data-open="${esc(b.id)}" class="flex items-center gap-3 w-full text-left hover:bg-stone-50 rounded-lg p-1 -m-1 transition">
+          <div class="w-7 shrink-0">${coverHtml(b)}</div>
+          <div class="min-w-0 flex-1">
+            <div class="text-xs font-semibold truncate font-serif-jp">${esc(b.title)}</div>
+            <div class="h-1 bg-stone-200 rounded-full mt-1.5 overflow-hidden"><div class="h-full bg-stone-800" style="width:${pct}%"></div></div>
+          </div>
+          <span class="text-[10px] text-stone-500 tabular-nums">${pct}%</span>
+        </button>`;
+      }).join('') : '<p class="text-xs text-stone-400 font-serif-jp">いま読んでいる本はありません</p>';
+
+      el.innerHTML = `
+        <div class="bg-white rounded-2xl border border-stone-200/70 p-4 flex flex-col justify-between">
+          <span class="text-xs text-stone-400">${y}年に読んだ本</span>
+          <div class="flex items-baseline gap-1 mt-1"><span class="text-4xl font-bold tabular-nums font-serif-jp">${readThisYear.length}</span><span class="text-sm text-stone-500">冊</span></div>
+          <span class="text-xs text-stone-500 mt-1">${pages.toLocaleString()} ページ / 本棚に ${state.books.length} 冊</span>
+        </div>
+        <div class="bg-white rounded-2xl border border-stone-200/70 p-4 col-span-2 md:col-span-1 order-last md:order-none">
+          <span class="text-xs text-stone-400">月ごとの読了</span>
+          <div class="flex gap-1 mt-2">${bars}</div>
+        </div>
+        <div class="bg-white rounded-2xl border border-stone-200/70 p-4 flex flex-col gap-2.5">
+          <span class="text-xs text-stone-400">読書中 ${reading.length ? `(${reading.length})` : ''}</span>
+          ${readingHtml}
+        </div>`;
+    }
+
+    /* ================= 本棚 ================= */
+    function filteredBooks() {
+      let list = state.books.slice();
+      if (state.filter !== 'all') list = list.filter(b => b.status === state.filter);
+      if (state.genre !== 'all') list = list.filter(b => genreOf(b) === state.genre);
+      const q = state.query.trim().toLowerCase();
+      if (q) list = list.filter(b => [b.title, b.author, b.genre, b.memo].some(v => (v || '').toLowerCase().includes(q)));
+      const t = (d, fb) => { const v = d ? new Date(d).getTime() : NaN; return isNaN(v) ? fb : v; };
+      const byTitle = (a, b) => (a.title || '').localeCompare(b.title || '', 'ja');
+      switch (state.sort) {
+        case 'recent': list.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0)); break;
+        case 'finished': list.sort((a, b) => t(b.endDate, 0) - t(a.endDate, 0)); break;
+        case 'title': list.sort(byTitle); break;
+        case 'rating': list.sort((a, b) => (b.rating || 0) - (a.rating || 0) || byTitle(a, b)); break;
+        case 'genre': list.sort((a, b) => genreOf(a).localeCompare(genreOf(b), 'ja') || byTitle(a, b)); break;
+        default: list.sort((a, b) => t(a.startDate, a.addedAt || 0) - t(b.startDate, b.addedAt || 0));
       }
-      
-      const savedLinks = localStorage.getItem('hondana_links');
-      if (savedLinks) state.links = JSON.parse(savedLinks);
-
-      const savedPhrases = localStorage.getItem('hondana_phrases');
-      if (savedPhrases) state.phrases = JSON.parse(savedPhrases);
+      return list;
     }
 
-    async function saveBookToCloud(book) {
-      saveDataLocal();
-      if(state.isPortfolioMode || !db || !currentUser || firebaseConfig.apiKey === "mock") return;
-      try { await setDoc(doc(db, 'users', currentUser.uid, 'books', book.id), book); } catch(e) {}
-    }
-    async function saveLinkToCloud(link) {
-      saveDataLocal();
-      if(state.isPortfolioMode || !db || !currentUser || firebaseConfig.apiKey === "mock") return;
-      try { await setDoc(doc(db, 'users', currentUser.uid, 'links', `${link.source}_${link.target}`), link); } catch(e) {}
-    }
-    async function savePhraseToCloud(phrase) {
-      saveDataLocal();
-      if(state.isPortfolioMode || !db || !currentUser || firebaseConfig.apiKey === "mock") return;
-      try { await setDoc(doc(db, 'users', currentUser.uid, 'phrases', phrase.id), phrase); } catch(e) {}
-    }
-    async function deletePhraseFromCloud(id) {
-      saveDataLocal();
-      if(state.isPortfolioMode || !db || !currentUser || firebaseConfig.apiKey === "mock") return;
-      try { await deleteDoc(doc(db, 'users', currentUser.uid, 'phrases', id)); } catch(e) {}
-    }
-    async function deleteLinkFromCloud(link) {
-      saveDataLocal();
-      if(state.isPortfolioMode || !db || !currentUser || firebaseConfig.apiKey === "mock") return;
-      try { await deleteDoc(doc(db, 'users', currentUser.uid, 'links', `${link.source}_${link.target}`)); } catch(e) {}
-    }
-    async function deleteBookFromCloud(id) {
-      saveDataLocal();
-      if(state.isPortfolioMode || !db || !currentUser || firebaseConfig.apiKey === "mock") return;
-      try { await deleteDoc(doc(db, 'users', currentUser.uid, 'books', id)); } catch(e) {}
-    }
-    
-    // 未ログイン時はローカルストレージにも保存する
-    function saveDataLocal() {
-      if (!currentUser) {
-        localStorage.setItem('hondana_books', JSON.stringify(state.books));
-        localStorage.setItem('hondana_links', JSON.stringify(state.links));
-        localStorage.setItem('hondana_phrases', JSON.stringify(state.phrases));
-      }
-    }
-
-    /* STREAMING_CHUNK:Bookshelf Rendering... */
-    function renderBookshelf() {
-      const container = document.getElementById('bookshelf-container');
-      const emptyState = document.getElementById('empty-state');
-      
+    function renderFilters() {
       const counts = { all: state.books.length, read: 0, reading: 0, wish: 0 };
-      state.books.forEach(b => { if(counts[b.status] !== undefined) counts[b.status]++; });
-      
-      document.getElementById('count-all').innerText = counts.all;
-      document.getElementById('count-read').innerText = counts.read;
-      document.getElementById('count-reading').innerText = counts.reading;
-      document.getElementById('count-wish').innerText = counts.wish;
-      
-      let filteredBooks = [...state.books];
-      if(state.currentFilter !== 'all') {
-        filteredBooks = filteredBooks.filter(b => b.status === state.currentFilter);
-      }
-      
-      filteredBooks.sort((a, b) => {
-        const timeA = a.startDate ? new Date(a.startDate).getTime() : (a.addedAt || 0);
-        const timeB = b.startDate ? new Date(b.startDate).getTime() : (b.addedAt || 0);
-        return timeA - timeB;
-      });
+      state.books.forEach(b => { if (counts[b.status] !== undefined) counts[b.status]++; });
+      const labels = [['all', 'すべて'], ['read', '読了'], ['reading', '読書中'], ['wish', '読みたい']];
+      $('status-filters').innerHTML = labels.map(([k, l]) => `
+        <button data-filter="${k}" class="px-3 py-1 rounded-full transition whitespace-nowrap ${state.filter === k ? 'bg-white shadow-sm text-stone-900 font-medium' : 'text-stone-500 hover:text-stone-900'}">
+          ${l}<span class="ml-1 text-[11px] text-stone-400 tabular-nums">${counts[k]}</span>
+        </button>`).join('');
 
-      const genreContainer = document.getElementById('genre-tabs-container');
-      if (genreContainer) {
-        const genres = [...new Set(state.books.map(b => b.genre || '未分類'))].sort();
-        genreContainer.innerHTML = '';
-        genres.forEach(g => {
-          const btn = document.createElement('button');
-          btn.className = 'px-3 py-1 bg-gray-100 text-gray-600 hover:bg-gray-200 text-xs rounded-full whitespace-nowrap transition';
-          btn.innerText = g;
-          btn.onclick = () => showToast(`「${g}」で絞り込みました`);
-          genreContainer.appendChild(btn);
-        });
-      }
-      
-      container.innerHTML = '';
-      if(filteredBooks.length === 0) {
-        emptyState.classList.remove('hidden');
-        emptyState.classList.add('flex');
-        return;
-      }
-      emptyState.classList.add('hidden');
-      emptyState.classList.remove('flex');
-      
-      const booksPerRow = window.innerWidth > 768 ? 6 : window.innerWidth > 480 ? 4 : 3;
-      for (let i = 0; i < filteredBooks.length; i += booksPerRow) {
-        const rowBooks = filteredBooks.slice(i, i + booksPerRow);
-        const rowDiv = document.createElement('div');
-        rowDiv.className = 'shelf-row';
-        
-        rowBooks.forEach(book => {
-          const bookEl = document.createElement('div');
-          const fallbackImg = `https://placehold.co/120x180/f3f4f6/9ca3af?text=${encodeURIComponent(book.title.substring(0,2))}`;
-          
-          if (state.viewMode === 'cover') {
-            bookEl.className = 'book-item-cover flex flex-col items-center relative';
-            bookEl.innerHTML = `
-              <div class="relative w-20 sm:w-28 aspect-[2/3] rounded-sm book-shadow transition-transform duration-300 bg-white">
-                <div class="book-spine-hint"></div>
-                <img src="${escapeHtml(book.coverUrl) || fallbackImg}" onerror="this.src='${fallbackImg}'" class="w-full h-full object-cover rounded-sm border border-black/10">
-              </div>
-            `;
-          } else {
-            const pages = parseInt(book.pages) || 250;
-            const thickness = Math.max(14, Math.min(80, pages / 6));
-            
-            const hash = Math.abs(book.id.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0));
-            const height = 125 + (hash % 30);
-            
-            bookEl.className = 'book-item-spine flex-shrink-0';
-            bookEl.style.width = `${thickness}px`;
-            bookEl.style.height = `${height}px`;
-            
-            bookEl.innerHTML = `
-              <div class="spine-title">${escapeHtml(book.title)}</div>
-              <div class="spine-hover-cover">
-                <img src="${escapeHtml(book.coverUrl) || fallbackImg}" onerror="this.src='${fallbackImg}'" class="w-full h-full object-cover rounded shadow-lg">
-              </div>
-            `;
-          }
-          
-          bookEl.addEventListener('click', () => window.openBookDetail(book.id));
-          rowDiv.appendChild(bookEl);
-        });
-        container.appendChild(rowDiv);
-      }
+      const base = state.filter === 'all' ? state.books : state.books.filter(b => b.status === state.filter);
+      const genreCounts = {};
+      base.forEach(b => { const g = genreOf(b); genreCounts[g] = (genreCounts[g] || 0) + 1; });
+      const genres = Object.keys(genreCounts).sort((a, b) => a.localeCompare(b, 'ja'));
+      if (state.genre !== 'all' && !genreCounts[state.genre]) state.genre = 'all';
+      const chip = (val, label, n) => `
+        <button data-genre="${esc(val)}" class="px-3 py-1 rounded-full text-xs whitespace-nowrap transition border ${state.genre === val ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'}">
+          ${esc(label)}${n !== undefined ? `<span class="ml-1 opacity-60">${n}</span>` : ''}
+        </button>`;
+      $('genre-chips').innerHTML = genres.length > 1 ? chip('all', 'すべてのジャンル') + genres.map(g => chip(g, g, genreCounts[g])).join('') : '';
+
+      document.querySelectorAll('.view-btn').forEach(b => {
+        const active = b.dataset.view === state.viewMode;
+        b.classList.toggle('bg-white', active);
+        b.classList.toggle('shadow-sm', active);
+        b.classList.toggle('text-stone-900', active);
+        b.classList.toggle('text-stone-400', !active);
+      });
+      $('shelf-sort').value = state.sort;
+      $('genre-list').innerHTML = [...new Set(state.books.map(genreOf))].map(g => `<option value="${esc(g)}">`).join('');
     }
 
-    /* STREAMING_CHUNK:Modal and Interaction Logic... */
-    window.openBookDetail = function(id) {
-      const book = state.books.find(b => b.id === id);
-      if(!book) return;
-      state.selectedBookId = id;
-      
-      document.getElementById('detail-title-input').value = book.title || '';
-      document.getElementById('detail-author-input').value = book.author || '';
-      document.getElementById('detail-cover').src = book.coverUrl || `https://placehold.co/120x180/f3f4f6/9ca3af?text=${encodeURIComponent((book.title || '本').substring(0,2))}`;
-      document.getElementById('detail-cover-url').value = book.coverUrl || '';
-      document.getElementById('detail-status').value = book.status || 'read';
-      document.getElementById('detail-rating').value = book.rating || 0;
-      document.getElementById('detail-memo').value = book.memo || '';
-      document.getElementById('detail-start-date').value = book.startDate || '';
-      document.getElementById('detail-end-date').value = book.endDate || '';
-      document.getElementById('detail-genre').value = book.genre || '';
-      document.getElementById('detail-pages').value = book.pages || '';
-      
-      updateStars(book.rating || 0);
-      document.getElementById('btn-delete-book').classList.remove('hidden');
-      document.getElementById('title-suggestions').classList.add('hidden');
-      
-      const modal = document.getElementById('modal-detail');
-      const content = document.getElementById('modal-detail-content');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-      
-      requestAnimationFrame(() => {
-        content.classList.add('modal-enter-active');
-        content.classList.remove('modal-exit', 'modal-exit-active');
-      });
-    };
-
-    window.openNewBookModal = function() {
-      state.selectedBookId = null;
-      
-      document.getElementById('detail-title-input').value = '';
-      document.getElementById('detail-author-input').value = '';
-      document.getElementById('detail-cover').src = 'https://placehold.co/120x180/f3f4f6/9ca3af?text=New';
-      document.getElementById('detail-cover-url').value = '';
-      document.getElementById('detail-status').value = 'wish';
-      document.getElementById('detail-rating').value = 0;
-      document.getElementById('detail-memo').value = '';
-      document.getElementById('detail-start-date').value = '';
-      document.getElementById('detail-end-date').value = '';
-      document.getElementById('detail-genre').value = '';
-      document.getElementById('detail-pages').value = '';
-      
-      updateStars(0);
-      document.getElementById('btn-delete-book').classList.add('hidden');
-      document.getElementById('title-suggestions').classList.add('hidden');
-      
-      const modal = document.getElementById('modal-detail');
-      const content = document.getElementById('modal-detail-content');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-      
-      requestAnimationFrame(() => {
-        content.classList.add('modal-enter-active');
-        content.classList.remove('modal-exit', 'modal-exit-active');
-      });
-    };
-
-    function updateStars(rating) {
-      const container = document.getElementById('detail-rating-stars');
-      container.innerHTML = '';
-      for (let i = 1; i <= 5; i++) {
-        const star = document.createElement('i');
-        star.className = i <= rating ? 'ph-fill ph-star text-yellow-400 cursor-pointer' : 'ph ph-star text-gray-300 cursor-pointer';
-        star.addEventListener('click', () => {
-          if(state.isPortfolioMode) return;
-          document.getElementById('detail-rating').value = i;
-          updateStars(i);
-        });
-        container.appendChild(star);
-      }
+    function spineDim(b) {
+      const pages = parseInt(b.pages, 10) || 250;
+      const w = clamp(Math.round(pages / 9), 18, 54);
+      const h = 158 + (hashStr(b.id) % 42);
+      return { w, h };
     }
 
-    function closeModal(modalId) {
-      const modal = document.getElementById(modalId);
-      const content = document.getElementById(modalId + '-content');
-      
-      if (content) {
-        content.classList.remove('modal-enter-active');
-        content.classList.add('modal-exit-active');
-        setTimeout(() => {
-          modal.classList.add('hidden');
-          modal.classList.remove('flex');
-          content.classList.remove('modal-exit-active');
-        }, 200);
-      } else {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-      }
-    }
+    function renderBookshelf() {
+      renderFilters();
+      const container = $('bookshelf-container');
+      const list = filteredBooks();
 
-    document.getElementById('btn-close-detail').addEventListener('click', () => closeModal('modal-detail'));
-    
-    document.getElementById('btn-add-book').addEventListener('click', () => {
-       window.openNewBookModal();
-    });
-
-    document.getElementById('btn-view-spine').addEventListener('click', () => {
-      state.viewMode = 'spine';
-      renderBookshelf();
-    });
-    document.getElementById('btn-view-cover').addEventListener('click', () => {
-      state.viewMode = 'cover';
-      renderBookshelf();
-    });
-
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        document.querySelectorAll('.filter-btn').forEach(b => {
-          b.classList.remove('text-gray-900', 'border-gray-900', 'active');
-          b.classList.add('text-gray-400', 'border-transparent');
-        });
-        e.currentTarget.classList.remove('text-gray-400', 'border-transparent');
-        e.currentTarget.classList.add('text-gray-900', 'border-gray-900', 'active');
-        state.currentFilter = e.currentTarget.getAttribute('data-filter');
-        renderBookshelf();
-      });
-    });
-
-    let searchTimeout = null;
-    let searchController = null;
-    const searchCache = new Map();
-    const titleInput = document.getElementById('detail-title-input');
-    const suggestionsBox = document.getElementById('title-suggestions');
-
-    titleInput.addEventListener('input', (e) => {
-      if (state.isPortfolioMode) return;
-      
-      const query = e.target.value.trim();
-      
-      if (query.length < 2) {
-        suggestionsBox.classList.add('hidden');
-        return;
-      }
-
-      clearTimeout(searchTimeout);
-      
-      searchTimeout = setTimeout(async () => {
-        if (searchCache.has(query)) {
-          renderSuggestions(searchCache.get(query));
-          return;
-        }
-
-        if (searchController) {
-          searchController.abort();
-        }
-        searchController = new AbortController();
-
-        try {
-          suggestionsBox.innerHTML = '<div class="p-3 text-xs text-gray-400 text-center flex items-center justify-center gap-2"><i class="ph ph-spinner animate-spin text-lg"></i> 検索中...</div>';
-          suggestionsBox.classList.remove('hidden');
-
-          const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=6`, {
-            signal: searchController.signal
-          });
-          const data = await response.json();
-          
-          if (data.items && data.items.length > 0) {
-            searchCache.set(query, data.items);
-            renderSuggestions(data.items);
-          } else {
-            searchCache.set(query, []);
-            suggestionsBox.innerHTML = '<div class="p-3 text-xs text-gray-400 text-center">見つかりませんでした</div>';
-          }
-        } catch(err) {
-          if (err.name !== 'AbortError') {
-             suggestionsBox.classList.add('hidden');
-          }
-        }
-      }, 800);
-    });
-
-    function renderSuggestions(items) {
-      if (!items || items.length === 0) {
-        suggestionsBox.innerHTML = '<div class="p-3 text-xs text-gray-400 text-center">見つかりませんでした</div>';
-        return;
-      }
-      
-      suggestionsBox.innerHTML = '';
-      items.forEach(item => {
-        const vol = item.volumeInfo;
-        const bookTitle = vol.title || '不明なタイトル';
-        const author = vol.authors ? vol.authors.join(', ') : '不明な著者';
-        
-        let coverUrl = '';
-        if (vol.imageLinks) {
-          coverUrl = vol.imageLinks.thumbnail || vol.imageLinks.smallThumbnail || '';
-          if (coverUrl) {
-            coverUrl = coverUrl.replace('http:', 'https:');
-            coverUrl = coverUrl.replace('&edge=curl', '');
-          }
-        }
-
-        const pages = vol.pageCount || '';
-
-        const div = document.createElement('div');
-        div.className = 'flex items-center gap-3 p-3 border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition';
-        const fallbackImg = `https://placehold.co/40x60/f3f4f6/9ca3af?text=${encodeURIComponent(bookTitle.substring(0,1))}`;
-        
-        div.innerHTML = `
-          <img src="${coverUrl || fallbackImg}" class="w-8 h-12 object-cover rounded shadow-sm shrink-0" onerror="this.src='${fallbackImg}'">
-          <div class="flex-1 min-w-0 pointer-events-none">
-            <div class="font-bold text-sm text-gray-900 truncate">${escapeHtml(bookTitle)}</div>
-            <div class="text-xs text-gray-500 mt-1 truncate">${escapeHtml(author)}</div>
-          </div>
-        `;
-        
-        div.addEventListener('click', () => {
-          titleInput.value = bookTitle;
-          const authorInput = document.getElementById('detail-author-input');
-          const coverInputUrl = document.getElementById('detail-cover-url');
-          const pagesInput = document.getElementById('detail-pages');
-
-          if(!authorInput.value && author) authorInput.value = author;
-          if(!coverInputUrl.value && coverUrl) {
-            coverInputUrl.value = coverUrl;
-            document.getElementById('detail-cover').src = coverUrl;
-          }
-          if(!pagesInput.value && pages) pagesInput.value = pages;
-          
-          suggestionsBox.classList.add('hidden');
-          showToast('書籍情報を自動入力しました', 'success');
-        });
-        
-        suggestionsBox.appendChild(div);
-      });
-      suggestionsBox.classList.remove('hidden');
-    }
-
-    titleInput.addEventListener('blur', () => {
-      setTimeout(() => { suggestionsBox.classList.add('hidden'); }, 200);
-    });
-
-    titleInput.addEventListener('focus', () => {
-      if (suggestionsBox.innerHTML.trim() !== '' && titleInput.value.trim().length >= 2) {
-        suggestionsBox.classList.remove('hidden');
-      }
-    });
-
-    document.getElementById('btn-save-book').addEventListener('click', async () => {
-      if(state.isPortfolioMode) return;
-      
-      const title = document.getElementById('detail-title-input').value.trim();
-      if (!title) {
-          showToast('タイトルを入力してください', 'error');
-          return;
-      }
-
-      let book = state.books.find(b => b.id === state.selectedBookId);
-      const isNew = !book;
-
-      if (isNew) {
-          book = {
-              id: generateId(),
-              addedAt: Date.now()
-          };
-      }
-
-      book.title = title;
-      book.author = document.getElementById('detail-author-input').value.trim();
-      book.status = document.getElementById('detail-status').value;
-      book.rating = parseInt(document.getElementById('detail-rating').value);
-      book.memo = document.getElementById('detail-memo').value.trim();
-      book.coverUrl = document.getElementById('detail-cover-url').value.trim();
-      book.startDate = document.getElementById('detail-start-date').value;
-      book.endDate = document.getElementById('detail-end-date').value;
-      book.genre = document.getElementById('detail-genre').value.trim() || '未分類';
-      book.pages = parseInt(document.getElementById('detail-pages').value, 10) || 250;
-
-      if (isNew) {
-          state.books.push(book);
-      }
-
-      await saveBookToCloud(book);
-      renderBookshelf();
-      if(state.activeTab === 'mapping') renderMapping();
-      
-      closeModal('modal-detail');
-      showToast(isNew ? '本を追加しました' : '変更を保存しました');
-    });
-
-    document.getElementById('btn-delete-book').addEventListener('click', async () => {
-      if(state.isPortfolioMode) return;
-      if(!state.selectedBookId) return;
-      if(!confirm('本当に削除しますか？')) return;
-      
-      const bookId = state.selectedBookId;
-      state.books = state.books.filter(b => b.id !== bookId);
-      
-      const linksToDelete = state.links.filter(l => l.source === bookId || l.target === bookId);
-      state.links = state.links.filter(l => l.source !== bookId && l.target !== bookId);
-      
-      await deleteBookFromCloud(bookId);
-      for(let l of linksToDelete) {
-         await deleteLinkFromCloud(l);
-      }
-      
-      saveDataLocal();
-      renderBookshelf();
-      if(state.activeTab === 'mapping') renderMapping();
-      closeModal('modal-detail');
-      showToast('本を削除しました');
-    });
-
-    document.getElementById('detail-cover-wrapper').addEventListener('click', () => {
-       if(state.isPortfolioMode) return;
-       const input = document.getElementById('cover-edit-container');
-       input.classList.toggle('hidden');
-    });
-
-    /* STREAMING_CHUNK:Share and Tab Switching Logic... */
-    document.getElementById('btn-share').addEventListener('click', async () => {
-      if(state.books.length === 0) { showToast('共有する本がありません', 'error'); return; }
-      showToast('ポートフォリオを生成中...', 'ai');
-      try {
-        const id = generateId() + generateId();
-        // 共有用のポートフォリオデータ作成（クラウドが繋がっていなくてもモックDBならそのまま動くように見せる）
-        if (db && firebaseConfig.apiKey !== "mock") {
-          await setDoc(doc(db, 'portfolios', id), {
-              books: state.books, links: state.links, phrases: state.phrases, createdAt: Date.now()
-          });
-        }
-        
-        const url = window.location.href.split('?')[0] + '?portfolio=' + id;
-        
-        try {
-           const res = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(url)}`);
-           const data = await res.json();
-           if(data.shorturl) {
-               await navigator.clipboard.writeText(data.shorturl);
-               showToast('短い共有リンクをコピーしました！');
-               return;
-           }
-        } catch(e) {}
-        
-        await navigator.clipboard.writeText(url);
-        showToast('ポートフォリオのリンクをコピーしました！');
-      } catch(e) {
-        showToast('リンクの生成に失敗しました', 'error');
-      }
-    });
-
-    function switchTab(tabId) {
-      const tabs = ['bookshelf', 'mapping', 'phrases', 'serendipity'];
-      tabs.forEach(t => {
-        const btn = document.getElementById(`tab-${t}`);
-        const view = document.getElementById(`view-${t}`);
-        if(t === tabId) {
-          btn.classList.add('text-gray-900', 'border-gray-900');
-          btn.classList.remove('text-gray-400', 'border-transparent');
-          view.classList.remove('hidden');
-          view.classList.add('flex');
-        } else {
-          btn.classList.remove('text-gray-900', 'border-gray-900');
-          btn.classList.add('text-gray-400', 'border-transparent');
-          view.classList.add('hidden');
-          view.classList.remove('flex');
-        }
-      });
-      state.activeTab = tabId;
-
-      if(tabId === 'serendipity') {
-         setTimeout(initSerendipityView, 50);
-      } else {
-         stopSerendipityAnimation();
-      }
-      
-      if(tabId === 'mapping') {
-         setTimeout(() => renderMapping(), 50);
-      }
-    }
-
-    document.getElementById('tab-bookshelf').addEventListener('click', () => switchTab('bookshelf'));
-    document.getElementById('tab-mapping').addEventListener('click', () => switchTab('mapping'));
-    
-    document.getElementById('tab-phrases').addEventListener('click', () => {
-      switchTab('phrases');
-      if (state.isPortfolioMode) {
-        document.getElementById('phrase-form-container').classList.add('hidden');
-      }
-      renderPhraseBookSelect();
-      renderPhrases();
-    });
-
-    document.getElementById('tab-serendipity').addEventListener('click', () => switchTab('serendipity'));
-
-    /* STREAMING_CHUNK:Phrases Logic... */
-    function renderPhraseBookSelect() {
-      const select = document.getElementById('phrase-book-select');
-      const currentVal = select.value;
-      select.innerHTML = '<option value="">書籍を選択 (任意)</option>';
-      
-      const sortedBooks = [...state.books].sort((a, b) => a.title.localeCompare(b.title));
-      
-      sortedBooks.forEach(book => {
-        const option = document.createElement('option');
-        option.value = book.id;
-        option.textContent = book.title;
-        select.appendChild(option);
-      });
-      
-      if (sortedBooks.find(b => b.id === currentVal)) {
-        select.value = currentVal;
-      }
-    }
-
-    function renderPhraseGenreTabs() {
-      const container = document.getElementById('phrases-genre-tabs-container');
-      
-      const phraseGenres = state.phrases.map(phrase => {
-        const book = state.books.find(b => b.id === phrase.bookId);
-        return book ? (book.safeGenre || book.genre || '未分類') : '書籍未指定';
-      });
-      const uniqueGenres = [...new Set(phraseGenres)].sort();
-      
-      if (state.phrases.length === 0) {
+      if (!list.length) {
         container.innerHTML = '';
+        $('empty-state').classList.replace('hidden', 'flex');
+        if (!state.books.length) {
+          $('empty-title').textContent = '本棚は空です';
+          $('empty-text').innerHTML = state.isPortfolioMode ? 'まだ本が登録されていません。' : '右上の「本を追加」から、<br>あなたの本棚を作り始めましょう。';
+        } else {
+          $('empty-title').textContent = '該当する本がありません';
+          $('empty-text').textContent = '絞り込みや検索の条件を変えてみてください。';
+        }
         return;
       }
+      $('empty-state').classList.replace('flex', 'hidden');
 
-      let html = '';
-      const isAllActive = state.phrasesFilter === 'all';
-      const allActiveClass = isAllActive ? 'bg-gray-900 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200';
-      html += `
-        <button class="phrase-filter-btn flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition ${allActiveClass}" data-genre="all">
-          <span>すべて</span>
-          <span class="opacity-70 text-[10px]">(${state.phrases.length})</span>
-        </button>
-      `;
+      // 本棚の内側の幅(枠と余白を除く)
+      const inner = Math.max(240, container.clientWidth - 20 - 24 - 12);
+      const rows = [];
 
-      uniqueGenres.forEach(g => {
-        const count = phraseGenres.filter(genre => genre === g).length;
-        const isActive = state.phrasesFilter === g;
-        const activeClass = isActive ? 'bg-gray-900 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200';
-        html += `
-          <button class="phrase-filter-btn flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition ${activeClass}" data-genre="${escapeHtml(g)}">
-            <span>${escapeHtml(g)}</span>
-            <span class="opacity-70 text-[10px]">(${count})</span>
-          </button>
-        `;
-      });
-      container.innerHTML = html;
-
-      container.querySelectorAll('.phrase-filter-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          state.phrasesFilter = e.currentTarget.getAttribute('data-genre');
-          renderPhrases();
-        });
-      });
+      if (state.viewMode === 'cover') {
+        const itemW = window.innerWidth >= 640 ? 100 : 78;
+        const gap = window.innerWidth >= 640 ? 22 : 14;
+        const perRow = Math.max(2, Math.floor((inner + gap) / (itemW + gap)));
+        for (let i = 0; i < list.length; i += perRow) {
+          const items = list.slice(i, i + perRow).map(b => {
+            const pct = b.status === 'reading' && b.pages ? clamp(Math.round((b.currentPage || 0) / b.pages * 100), 0, 100) : null;
+            return `<div class="face" data-open="${esc(b.id)}" style="width:${itemW}px" tabindex="0" title="${esc(b.title)}">
+              ${coverHtml(b)}
+              ${b.status === 'reading' ? '<span class="ribbon" style="right:14%"></span>' : ''}
+              ${pct !== null ? `<div class="absolute left-1 right-1 bottom-1 h-1 rounded-full bg-black/25 overflow-hidden"><div class="h-full bg-white" style="width:${pct}%"></div></div>` : ''}
+            </div>`;
+          }).join('');
+          rows.push(`<div class="shelf" style="gap:${gap}px;padding-left:${gap / 2}px">${items}</div>`);
+        }
+      } else {
+        let row = [], used = 0;
+        for (const b of list) {
+          const d = spineDim(b);
+          if (row.length && used + d.w + 3 > inner) { rows.push(row); row = []; used = 0; }
+          row.push({ b, d });
+          used += d.w + 3;
+        }
+        if (row.length) rows.push(row);
+        for (let i = 0; i < rows.length; i++) {
+          rows[i] = `<div class="shelf">${rows[i].map(({ b, d }) => {
+            const c = colorFor(b);
+            const fs = d.w < 24 ? 10 : d.w < 34 ? 12 : 13;
+            return `<div class="spine" data-open="${esc(b.id)}" tabindex="0" style="width:${d.w}px;height:${d.h}px;background:${c.bg};color:${c.fg}" aria-label="${esc(b.title)}">
+              <span class="band" style="top:10px"></span><span class="band" style="bottom:12px"></span>
+              <div class="spine-title" style="font-size:${fs}px">${esc(b.title)}</div>
+              ${d.w >= 24 && b.author ? `<div class="spine-author">${esc(b.author)}</div>` : ''}
+              ${b.status === 'reading' ? '<span class="ribbon"></span>' : ''}
+              <div class="spine-pop">${coverHtml(b)}</div>
+            </div>`;
+          }).join('')}</div>`;
+        }
+      }
+      container.innerHTML = `<div class="bookcase">${rows.join('')}</div>`;
     }
 
-    function renderPhrases() {
-      renderPhraseGenreTabs();
-      const container = document.getElementById('phrases-list');
-      const emptyState = document.getElementById('phrases-empty-state');
-      const emptyMessage = document.getElementById('phrases-empty-message');
-      container.innerHTML = '';
-      
-      let filteredPhrases = state.phrases;
-      if (state.phrasesFilter !== 'all') {
-        filteredPhrases = state.phrases.filter(phrase => {
-          const book = state.books.find(b => b.id === phrase.bookId);
-          const genre = book ? (book.safeGenre || book.genre || '未分類') : '書籍未指定';
-          return genre === state.phrasesFilter;
-        });
-      }
-      
-      if (filteredPhrases.length === 0) {
-        if (state.phrases.length === 0) {
-          emptyMessage.innerText = 'まだフレーズが記録されていません。';
-        } else {
-          emptyMessage.innerText = 'このジャンルのフレーズはありません。';
-        }
-        emptyState.classList.remove('hidden');
-        emptyState.classList.add('flex');
-        return;
-      }
-      
-      emptyState.classList.add('hidden');
-      emptyState.classList.remove('flex');
-      
-      const sortedPhrases = [...filteredPhrases].sort((a, b) => b.addedAt - a.addedAt);
-      
-      sortedPhrases.forEach(phrase => {
-        const book = state.books.find(b => b.id === phrase.bookId);
-        const dateStr = new Date(phrase.addedAt).toLocaleDateString('ja-JP');
-        
-        const card = document.createElement('div');
-        card.className = 'bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative group transition hover:shadow-md flex flex-col h-full selectable-text';
-        
-        let bookInfoHtml = '';
-        if (book) {
-          const fallbackImg = `https://placehold.co/40x60/f3f4f6/9ca3af?text=${encodeURIComponent(book.title.substring(0,1))}`;
-          bookInfoHtml = `
-            <div class="flex items-center gap-3 mb-3 cursor-pointer hover:bg-gray-50 p-2 -ml-2 rounded-xl transition inline-flex w-fit" onclick="window.openBookDetail('${book.id}')">
-              <img src="${escapeHtml(book.coverUrl) || fallbackImg}" onerror="this.src='${fallbackImg}'" class="w-8 h-12 object-cover rounded shadow-sm">
-              <div class="flex flex-col">
-                <span class="text-sm font-bold text-gray-800 line-clamp-1">${escapeHtml(book.title)}</span>
-                <span class="text-xs text-gray-500">${phrase.page ? `P.${escapeHtml(phrase.page.toString())}` : 'ページ未指定'}</span>
-              </div>
-            </div>
-          `;
-        } else {
-           bookInfoHtml = `
-            <div class="flex items-center gap-2 mb-3 text-xs font-medium text-gray-400 bg-gray-50 px-3 py-1.5 rounded-full inline-flex w-fit">
-              <i class="ph ph-book text-gray-500"></i> 書籍未指定 ${phrase.page ? `(P.${escapeHtml(phrase.page.toString())})` : ''}
-            </div>
-           `;
-        }
-        
-        card.innerHTML = `
-          ${bookInfoHtml}
-          <p class="text-gray-900 font-serif-jp text-[15px] leading-loose whitespace-pre-wrap pl-4 border-l-4 border-indigo-200 mt-2 flex-1">${escapeHtml(phrase.text)}</p>
-          <div class="mt-4 flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-50">
-            <span>${dateStr}</span>
-          </div>
-          ${state.isPortfolioMode ? '' : `
-            <button class="absolute top-4 right-4 w-8 h-8 rounded-full bg-red-50 text-red-500 opacity-0 group-hover:opacity-100 flex items-center justify-center transition hover:bg-red-100 delete-phrase-btn" data-id="${phrase.id}" title="削除">
-              <i class="ph ph-trash"></i>
-            </button>
-          `}
-        `;
-        
-        container.appendChild(card);
+    // 本棚のイベント
+    document.addEventListener('click', (e) => {
+      const opener = e.target.closest('[data-open]');
+      if (opener && !e.target.closest('#modal')) openDetail(opener.dataset.open);
+    });
+    $('bookshelf-container').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { const t = e.target.closest('[data-open]'); if (t) openDetail(t.dataset.open); }
+    });
+    $('status-filters').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-filter]'); if (!b) return;
+      state.filter = b.dataset.filter; renderBookshelf();
+    });
+    $('genre-chips').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-genre]'); if (!b) return;
+      state.genre = b.dataset.genre; renderBookshelf();
+    });
+    $('shelf-search').addEventListener('input', debounce((e) => { state.query = e.target.value; renderBookshelf(); }, 200));
+    $('shelf-sort').addEventListener('change', (e) => { state.sort = e.target.value; safeLS.set('hondana_sort', state.sort); renderBookshelf(); });
+    document.querySelectorAll('.view-btn').forEach(btn => btn.addEventListener('click', () => {
+      state.viewMode = btn.dataset.view; safeLS.set('hondana_view', state.viewMode); renderBookshelf();
+    }));
+    $('btn-add-book').addEventListener('click', () => openDetail(null));
+
+    /* ================= 本の詳細モーダル ================= */
+    const modalFields = ['detail-title', 'detail-author', 'detail-start', 'detail-end', 'detail-genre', 'detail-pages', 'detail-memo', 'detail-current', 'detail-current-range', 'detail-cover-url'];
+
+    function draftBook() {
+      return { title: $('detail-title').value.trim() || '無題', author: $('detail-author').value.trim(), coverUrl: state.draftCover };
+    }
+    function updateCoverPreview() { $('detail-cover').innerHTML = coverHtml(draftBook()); }
+
+    function setDraftStatus(s) {
+      state.draftStatus = s;
+      document.querySelectorAll('#status-seg [data-status]').forEach(b => {
+        const active = b.dataset.status === s;
+        b.classList.toggle('bg-white', active);
+        b.classList.toggle('shadow-sm', active);
+        b.classList.toggle('text-stone-900', active);
+        b.classList.toggle('text-stone-500', !active);
       });
-      
-      if (!state.isPortfolioMode) {
-        document.querySelectorAll('.delete-phrase-btn').forEach(btn => {
-          btn.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            const id = e.currentTarget.getAttribute('data-id');
-            if (confirm('このフレーズを削除しますか？')) {
-              state.phrases = state.phrases.filter(p => p.id !== id);
-              await deletePhraseFromCloud(id);
-              renderPhrases();
-              showToast('フレーズを削除しました');
-            }
-          });
+      $('progress-block').classList.toggle('hidden', s !== 'reading');
+      updateProgressUI();
+    }
+
+    function updateProgressUI() {
+      const pages = parseInt($('detail-pages').value, 10) || 250;
+      const cur = clamp(parseInt($('detail-current').value, 10) || 0, 0, pages);
+      $('detail-current-range').max = pages;
+      $('detail-current-range').value = cur;
+      $('progress-label').textContent = `${Math.round(cur / pages * 100)}% (${cur}/${pages}p)`;
+    }
+
+    function renderStars() {
+      const box = $('detail-stars');
+      box.innerHTML = '';
+      for (let i = 1; i <= 5; i++) {
+        const s = document.createElement('button');
+        s.type = 'button';
+        s.className = i <= state.draftRating ? 'ph-fill ph-star text-amber-500' : 'ph ph-star text-stone-300 hover:text-amber-400';
+        s.setAttribute('aria-label', `${i}つ星`);
+        s.addEventListener('click', () => {
+          if (state.isPortfolioMode) return;
+          state.draftRating = state.draftRating === i ? 0 : i; // 同じ星をもう一度押すと解除
+          renderStars();
         });
+        box.appendChild(s);
       }
     }
 
-    document.getElementById('phrase-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (state.isPortfolioMode) return;
-      
-      const bookId = document.getElementById('phrase-book-select').value;
-      const pageVal = document.getElementById('phrase-page').value;
-      const text = document.getElementById('phrase-text').value.trim();
-      
-      if (!text) return;
-      
-      const newPhrase = {
-        id: generateId(),
-        bookId: bookId || null,
-        page: pageVal ? parseInt(pageVal, 10) : null,
-        text: text,
-        addedAt: Date.now()
-      };
-      
-      state.phrases.push(newPhrase);
-      await savePhraseToCloud(newPhrase);
-      
-      document.getElementById('phrase-page').value = '';
-      document.getElementById('phrase-text').value = '';
-      
-      renderPhrases();
+    function renderDetailPhrases() {
+      const wrap = $('detail-phrases-wrap');
+      if (!state.selectedBookId) { wrap.classList.add('hidden'); return; }
+      wrap.classList.remove('hidden');
+      const list = state.phrases.filter(p => p.bookId === state.selectedBookId).sort((a, b) => (a.page || 0) - (b.page || 0));
+      $('detail-phrases-count').textContent = list.length ? `${list.length}件` : '';
+      $('detail-phrases').innerHTML = list.length ? list.map(p => `
+        <div class="text-sm font-serif-jp leading-relaxed pl-3 border-l-2 border-amber-200 text-stone-700 whitespace-pre-wrap">${esc(p.text)}${p.page ? `<span class="text-[10px] text-stone-400 font-sans ml-2">p.${esc(p.page)}</span>` : ''}</div>
+      `).join('') : '<p class="text-xs text-stone-400">まだありません</p>';
+      $('detail-phrase-add').classList.toggle('hidden', state.isPortfolioMode);
+    }
+
+    function openDetail(id) {
+      const b = id ? state.books.find(x => x.id === id) : null;
+      if (id && !b) return;
+      state.selectedBookId = b ? b.id : null;
+      $('detail-title').value = b ? b.title : '';
+      $('detail-author').value = b ? b.author : '';
+      $('detail-start').value = b ? b.startDate : '';
+      $('detail-end').value = b ? b.endDate : '';
+      $('detail-genre').value = b && b.genre !== '未分類' ? b.genre : '';
+      $('detail-pages').value = b ? b.pages : '';
+      $('detail-memo').value = b ? b.memo : '';
+      $('detail-current').value = b && b.currentPage ? b.currentPage : 0;
+      state.draftCover = b ? b.coverUrl : '';
+      $('detail-cover-url').value = state.draftCover.startsWith('data:') ? '' : state.draftCover;
+      $('detail-cover-url').placeholder = state.draftCover.startsWith('data:') ? 'アップロードした画像を使用中' : '画像URLを貼り付け';
+      $('cover-edit').classList.add('hidden');
+      state.draftRating = b ? b.rating : 0;
+      setDraftStatus(b ? b.status : 'wish');
+      updateCoverPreview();
+      renderStars();
+      renderDetailPhrases();
+
+      const ro = state.isPortfolioMode;
+      modalFields.forEach(f => { $(f).disabled = ro; });
+      document.querySelectorAll('#status-seg button').forEach(x => x.disabled = ro);
+      $('cover-tools').classList.toggle('hidden', ro);
+      $('detail-actions').classList.toggle('hidden', ro);
+      $('btn-delete-book').classList.toggle('hidden', !b);
+
+      const modal = $('modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+      requestAnimationFrame(() => modal.classList.add('modal-open'));
+      if (!b) setTimeout(() => $('detail-title').focus(), 50);
+    }
+
+    function closeModal() {
+      const modal = $('modal');
+      modal.classList.remove('modal-open');
+      document.body.style.overflow = '';
+      setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 200);
+    }
+
+    $('btn-close-modal').addEventListener('click', closeModal);
+    $('btn-cancel-book').addEventListener('click', closeModal);
+    $('modal').addEventListener('click', (e) => { if (e.target.id === 'modal') closeModal(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('modal').classList.contains('hidden')) closeModal(); });
+
+    $('detail-title').addEventListener('input', updateCoverPreview);
+    $('detail-author').addEventListener('input', updateCoverPreview);
+    $('detail-pages').addEventListener('input', updateProgressUI);
+    $('detail-current').addEventListener('input', updateProgressUI);
+    $('detail-current-range').addEventListener('input', (e) => { $('detail-current').value = e.target.value; updateProgressUI(); });
+
+    $('status-seg').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-status]'); if (!btn || state.isPortfolioMode) return;
+      const s = btn.dataset.status;
+      // ステータスに合わせて日付を自動で入れる
+      if ((s === 'reading' || s === 'read') && !$('detail-start').value) $('detail-start').value = todayStr();
+      if (s === 'read' && !$('detail-end').value) $('detail-end').value = todayStr();
+      setDraftStatus(s);
+    });
+
+    $('btn-cover-toggle').addEventListener('click', () => $('cover-edit').classList.toggle('hidden'));
+    $('detail-cover-url').addEventListener('input', (e) => { state.draftCover = e.target.value.trim(); updateCoverPreview(); });
+    $('btn-cover-clear').addEventListener('click', () => {
+      state.draftCover = ''; $('detail-cover-url').value = ''; $('detail-cover-url').placeholder = '画像URLを貼り付け'; updateCoverPreview();
+    });
+    $('detail-cover-file').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        state.draftCover = await resizeImage(file);
+        $('detail-cover-url').value = '';
+        $('detail-cover-url').placeholder = 'アップロードした画像を使用中';
+        updateCoverPreview();
+      } catch { showToast('画像を読み込めませんでした', 'error'); }
+      e.target.value = '';
+    });
+
+    $('btn-save-book').addEventListener('click', async () => {
+      const title = $('detail-title').value.trim();
+      if (!title) { showToast('タイトルを入力してください', 'error'); $('detail-title').focus(); return; }
+      const existing = state.books.find(b => b.id === state.selectedBookId);
+      const pages = parseInt($('detail-pages').value, 10) || 250;
+      let currentPage = clamp(parseInt($('detail-current').value, 10) || 0, 0, pages);
+      if (state.draftStatus === 'read') currentPage = pages;
+      const start = $('detail-start').value, end = $('detail-end').value;
+      if (start && end && end < start) { showToast('読み終えた日が読み始めた日より前になっています', 'error'); return; }
+
+      const book = normalizeBook({
+        ...(existing || { id: generateId(), addedAt: Date.now() }),
+        title,
+        author: $('detail-author').value.trim(),
+        coverUrl: state.draftCover,
+        status: state.draftStatus,
+        rating: state.draftRating,
+        memo: $('detail-memo').value.trim(),
+        startDate: start, endDate: end,
+        genre: $('detail-genre').value.trim() || '未分類',
+        pages, currentPage
+      });
+      if (existing) Object.assign(existing, book); else state.books.push(book);
+
+      closeModal();
+      renderAll();
+      showToast(existing ? '変更を保存しました' : '本棚に追加しました');
+      await cloudSet('books', book.id, book);
+    });
+
+    $('btn-delete-book').addEventListener('click', async () => {
+      const id = state.selectedBookId;
+      const b = state.books.find(x => x.id === id);
+      if (!b || !confirm(`「${b.title}」を本棚から削除しますか？\n(この本のフレーズは「書籍未指定」として残ります)`)) return;
+      state.books = state.books.filter(x => x.id !== id);
+      const removedLinks = state.links.filter(l => l.source === id || l.target === id);
+      state.links = state.links.filter(l => l.source !== id && l.target !== id);
+      closeModal();
+      renderAll();
+      showToast('本を削除しました');
+      await cloudDelete('books', id);
+      for (const l of removedLinks) await cloudDelete('links', linkId(l));
+    });
+
+    async function addPhrase(bookId, text, page) {
+      const p = { id: generateId(), bookId: bookId || null, page: page ? parseInt(page, 10) : null, text, addedAt: Date.now() };
+      state.phrases.push(p);
+      await cloudSet('phrases', p.id, p);
+      return p;
+    }
+
+    $('btn-detail-phrase').addEventListener('click', async () => {
+      const text = $('detail-phrase-text').value.trim();
+      if (!text || !state.selectedBookId) return;
+      await addPhrase(state.selectedBookId, text, $('detail-phrase-page').value);
+      $('detail-phrase-text').value = ''; $('detail-phrase-page').value = '';
+      renderDetailPhrases();
       showToast('フレーズを記録しました');
     });
+    $('detail-phrase-text').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) $('btn-detail-phrase').click(); });
 
-    /* STREAMING_CHUNK:Mapping Logic... */
-    document.getElementById('btn-connect-mode').addEventListener('click', (e) => {
-      if(state.isPortfolioMode) {
-        showToast('ポートフォリオモードでは編集できません', 'error');
+    /* ================= フレーズ ================= */
+    function renderPhraseBookSelect() {
+      const sel = $('phrase-book-select');
+      const cur = sel.value;
+      const books = [...state.books].sort((a, b) => (a.status === 'reading' ? -1 : 0) - (b.status === 'reading' ? -1 : 0) || a.title.localeCompare(b.title, 'ja'));
+      sel.innerHTML = '<option value="">書籍を選択 (任意)</option>' +
+        books.map(b => `<option value="${esc(b.id)}">${b.status === 'reading' ? '📖 ' : ''}${esc(b.title)}</option>`).join('');
+      if (books.some(b => b.id === cur)) sel.value = cur;
+    }
+
+    const phraseGenre = (p) => { const b = state.books.find(x => x.id === p.bookId); return b ? genreOf(b) : '書籍未指定'; };
+
+    function renderPhrases() {
+      // ジャンルの絞り込み
+      const counts = {};
+      state.phrases.forEach(p => { const g = phraseGenre(p); counts[g] = (counts[g] || 0) + 1; });
+      const genres = Object.keys(counts).sort((a, b) => a.localeCompare(b, 'ja'));
+      if (state.phrasesGenre !== 'all' && !counts[state.phrasesGenre]) state.phrasesGenre = 'all';
+      const chip = (val, label, n) => `<button data-pgenre="${esc(val)}" class="px-3 py-1 rounded-full text-xs whitespace-nowrap transition border ${state.phrasesGenre === val ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'}">${esc(label)}<span class="ml-1 opacity-60">${n}</span></button>`;
+      $('phrase-chips').innerHTML = state.phrases.length ? chip('all', 'すべて', state.phrases.length) + genres.map(g => chip(g, g, counts[g])).join('') : '';
+
+      let list = state.phrases.slice();
+      if (state.phrasesGenre !== 'all') list = list.filter(p => phraseGenre(p) === state.phrasesGenre);
+      const q = state.phrasesQuery.trim().toLowerCase();
+      if (q) list = list.filter(p => {
+        const b = state.books.find(x => x.id === p.bookId);
+        return (p.text || '').toLowerCase().includes(q) || (b && (b.title + b.author).toLowerCase().includes(q));
+      });
+      list.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+
+      const container = $('phrases-list');
+      if (!list.length) {
+        container.innerHTML = '';
+        $('phrases-empty-msg').textContent = state.phrases.length ? '条件に合うフレーズはありません。' : 'まだフレーズが記録されていません。';
+        $('phrases-empty').classList.replace('hidden', 'flex');
         return;
       }
+      $('phrases-empty').classList.replace('flex', 'hidden');
+
+      container.innerHTML = list.map(p => {
+        const b = state.books.find(x => x.id === p.bookId);
+        const dateStr = new Date(p.addedAt || Date.now()).toLocaleDateString('ja-JP');
+        const bookHtml = b ? `
+          <button data-open="${esc(b.id)}" class="flex items-center gap-3 mt-4 hover:bg-stone-50 p-1.5 -ml-1.5 rounded-lg transition text-left">
+            <div class="w-7 shrink-0">${coverHtml(b)}</div>
+            <div class="min-w-0">
+              <div class="text-xs font-semibold truncate">${esc(b.title)}</div>
+              <div class="text-[11px] text-stone-400 truncate">${esc(b.author)}${p.page ? ` · p.${esc(p.page)}` : ''}</div>
+            </div>
+          </button>` : `<div class="mt-4 text-[11px] text-stone-400 flex items-center gap-1"><i class="ph ph-book"></i>書籍未指定${p.page ? ` · p.${esc(p.page)}` : ''}</div>`;
+        const actions = state.isPortfolioMode ? '' : `
+          <div class="absolute top-3 right-3 flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition">
+            <button data-action="copy" data-id="${esc(p.id)}" class="w-8 h-8 rounded-full hover:bg-stone-100 text-stone-500" title="コピー"><i class="ph ph-copy"></i></button>
+            <button data-action="edit" data-id="${esc(p.id)}" class="w-8 h-8 rounded-full hover:bg-stone-100 text-stone-500" title="編集"><i class="ph ph-pencil-simple"></i></button>
+            <button data-action="delete" data-id="${esc(p.id)}" class="w-8 h-8 rounded-full hover:bg-red-50 text-red-500" title="削除"><i class="ph ph-trash"></i></button>
+          </div>`;
+        return `<article class="break-inside-avoid mb-5 bg-white p-6 pt-8 rounded-2xl border border-stone-200/70 relative group transition hover:shadow-md">
+          <i class="ph-fill ph-quotes absolute top-4 left-5 text-2xl text-amber-200"></i>
+          ${actions}
+          <p class="font-serif-jp text-[15px] leading-loose whitespace-pre-wrap relative">${esc(p.text)}</p>
+          <div class="flex items-end justify-between gap-2">
+            ${bookHtml}
+            <span class="text-[10px] text-stone-300 shrink-0">${dateStr}</span>
+          </div>
+        </article>`;
+      }).join('');
+    }
+
+    function resetPhraseForm() {
+      state.editingPhraseId = null;
+      $('phrase-text').value = ''; $('phrase-page').value = '';
+      $('phrase-form-title').innerHTML = '<i class="ph-fill ph-quotes text-lg text-amber-700"></i> 新しいフレーズを記録';
+      $('btn-add-phrase').querySelector('span').textContent = '記録する';
+      $('btn-cancel-phrase').classList.add('hidden');
+    }
+
+    $('phrases-list').addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-action]'); if (!btn) return;
+      const p = state.phrases.find(x => x.id === btn.dataset.id); if (!p) return;
+      if (btn.dataset.action === 'copy') {
+        const b = state.books.find(x => x.id === p.bookId);
+        const text = b ? `${p.text}\n——${b.author ? b.author + '『' + b.title + '』' : '『' + b.title + '』'}${p.page ? ' p.' + p.page : ''}` : p.text;
+        try { await navigator.clipboard.writeText(text); showToast('コピーしました'); } catch { showToast('コピーできませんでした', 'error'); }
+      } else if (btn.dataset.action === 'edit') {
+        state.editingPhraseId = p.id;
+        renderPhraseBookSelect();
+        $('phrase-book-select').value = p.bookId || '';
+        $('phrase-page').value = p.page || '';
+        $('phrase-text').value = p.text;
+        $('phrase-form-title').innerHTML = '<i class="ph ph-pencil-simple text-lg text-amber-700"></i> フレーズを編集';
+        $('btn-add-phrase').querySelector('span').textContent = '更新する';
+        $('btn-cancel-phrase').classList.remove('hidden');
+        $('phrase-form-container').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        $('phrase-text').focus();
+      } else if (btn.dataset.action === 'delete') {
+        if (!confirm('このフレーズを削除しますか？')) return;
+        state.phrases = state.phrases.filter(x => x.id !== p.id);
+        if (state.editingPhraseId === p.id) resetPhraseForm();
+        renderPhrases();
+        showToast('フレーズを削除しました');
+        await cloudDelete('phrases', p.id);
+      }
+    });
+
+    $('phrase-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (state.isPortfolioMode) return;
+      const text = $('phrase-text').value.trim();
+      if (!text) { showToast('フレーズを入力してください', 'error'); return; }
+      const bookId = $('phrase-book-select').value || null;
+      const page = $('phrase-page').value;
+      if (state.editingPhraseId) {
+        const p = state.phrases.find(x => x.id === state.editingPhraseId);
+        if (p) {
+          Object.assign(p, { text, bookId, page: page ? parseInt(page, 10) : null });
+          resetPhraseForm(); renderPhrases();
+          showToast('フレーズを更新しました');
+          await cloudSet('phrases', p.id, p);
+        }
+      } else {
+        await addPhrase(bookId, text, page);
+        resetPhraseForm(); renderPhrases();
+        showToast('フレーズを記録しました');
+      }
+    });
+    $('btn-cancel-phrase').addEventListener('click', resetPhraseForm);
+    $('phrase-chips').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-pgenre]'); if (!b) return;
+      state.phrasesGenre = b.dataset.pgenre; renderPhrases();
+    });
+    $('phrase-search').addEventListener('input', debounce((e) => { state.phrasesQuery = e.target.value; renderPhrases(); }, 200));
+
+    /* ================= タブ ================= */
+    function switchTab(tab) {
+      state.activeTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        const active = b.dataset.tab === tab;
+        b.classList.toggle('text-stone-900', active);
+        b.classList.toggle('border-stone-900', active);
+        b.classList.toggle('text-stone-400', !active);
+        b.classList.toggle('border-transparent', !active);
+      });
+      document.querySelectorAll('.view').forEach(v => {
+        const active = v.id === `view-${tab}`;
+        v.classList.toggle('hidden', !active);
+        v.classList.toggle('flex', active);
+      });
+      if (tab !== 'serendipity') stopSerendipity();
+      if (tab === 'bookshelf') renderBookshelf();
+      else setTimeout(refreshActiveTab, 30);
+    }
+    document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+
+    /* ================= 共有 ================= */
+    $('btn-share').addEventListener('click', async () => {
+      if (!currentUser) { showToast('本棚を共有するにはログインしてください', 'error'); return; }
+      if (!state.books.length) { showToast('共有する本がありません', 'error'); return; }
+      if (!confirm('現在の本棚・感想メモ・フレーズを、リンクを知っている人が閲覧できる形で共有します。よろしいですか？')) return;
+      showToast('共有リンクを作成しています...', 'info');
+      try {
+        const id = generateId() + generateId();
+        let payload = {
+          books: state.books, links: state.links, phrases: state.phrases,
+          ownerUid: currentUser.uid, ownerName: currentUser.displayName || '', createdAt: Date.now()
+        };
+        // Firestoreの1ドキュメント上限(1MB)対策: 大きすぎる場合はアップロード画像の表紙を外す
+        if (JSON.stringify(payload).length > 900000) {
+          payload = { ...payload, books: state.books.map(b => b.coverUrl && b.coverUrl.startsWith('data:') ? { ...b, coverUrl: '' } : b) };
+        }
+        await setDoc(doc(db, 'portfolios', id), clean(payload));
+        const url = location.href.split('?')[0] + '?portfolio=' + id;
+        if (navigator.share && /iPhone|iPad|Android/i.test(navigator.userAgent)) {
+          try { await navigator.share({ title: 'hondana - 私の本棚', url }); return; } catch {}
+        }
+        await navigator.clipboard.writeText(url);
+        showToast('共有リンクをコピーしました');
+      } catch (e) {
+        console.error(e);
+        showToast('リンクの作成に失敗しました', 'error');
+      }
+    });
+
+    /* ================= Knowledge Map ================= */
+    const mapContainer = $('map-container');
+    let isDraggingMap = false, dragMoved = false, startX, startY, scrollLeft, scrollTop;
+
+    $('btn-connect-mode').addEventListener('click', (e) => {
       state.isConnectMode = !state.isConnectMode;
       state.connectSourceId = null;
       const btn = e.currentTarget;
-      if(state.isConnectMode) {
-        btn.classList.add('bg-indigo-500', 'text-white', 'shadow-md');
-        btn.classList.remove('bg-slate-800');
-        btn.innerHTML = `<i class="ph ph-git-merge text-white text-lg"></i> <span class="font-bold">Connect: ON</span>`;
-      } else {
-        btn.classList.remove('bg-indigo-500', 'shadow-md');
-        btn.classList.add('bg-slate-800');
-        btn.innerHTML = `<i class="ph ph-git-merge text-lg"></i> <span>Connect: OFF</span>`;
-      }
+      btn.classList.toggle('bg-amber-600', state.isConnectMode);
+      btn.classList.toggle('hover:bg-amber-500', state.isConnectMode);
+      btn.classList.toggle('bg-slate-800', !state.isConnectMode);
+      btn.querySelector('span').textContent = state.isConnectMode ? 'Connect: ON' : 'Connect: OFF';
+      $('map-hint').textContent = state.isConnectMode
+        ? '結びたい本を2冊、順にタップしてください。線をタップすると消せます。'
+        : '本と本を線で結び、あなただけの「思考の星座」を描きましょう。';
       renderMapping();
     });
 
-    const mapContainer = document.getElementById('map-container');
-    let isDraggingMap = false;
-    let startX, startY, scrollLeft, scrollTop;
-
-    mapContainer.addEventListener('mousedown', (e) => {
-      if(e.target.closest('.map-node') || e.target.tagName === 'path') return;
-      isDraggingMap = true;
-      mapContainer.classList.add('cursor-grabbing');
-      startX = e.pageX - mapContainer.offsetLeft;
-      startY = e.pageY - mapContainer.offsetTop;
-      scrollLeft = mapContainer.scrollLeft;
-      scrollTop = mapContainer.scrollTop;
-    });
-
-    mapContainer.addEventListener('mouseleave', () => {
-      isDraggingMap = false;
-      mapContainer.classList.remove('cursor-grabbing');
-    });
-
-    mapContainer.addEventListener('mouseup', () => {
-      isDraggingMap = false;
-      mapContainer.classList.remove('cursor-grabbing');
-    });
-
-    mapContainer.addEventListener('mousemove', (e) => {
-      if(!isDraggingMap) return;
-      e.preventDefault();
-      const x = e.pageX - mapContainer.offsetLeft;
-      const y = e.pageY - mapContainer.offsetTop;
-      const walkX = (x - startX) * 1.5;
-      const walkY = (y - startY) * 1.5;
-      mapContainer.scrollLeft = scrollLeft - walkX;
-      mapContainer.scrollTop = scrollTop - walkY;
-    });
-
-    mapContainer.addEventListener('touchstart', (e) => {
-      if(e.target.closest('.map-node') || e.target.tagName === 'path') return;
-      isDraggingMap = true;
-      startX = e.touches[0].pageX - mapContainer.offsetLeft;
-      startY = e.touches[0].pageY - mapContainer.offsetTop;
-      scrollLeft = mapContainer.scrollLeft;
-      scrollTop = mapContainer.scrollTop;
-    });
-    
+    const startDrag = (x, y) => { isDraggingMap = true; dragMoved = false; startX = x; startY = y; scrollLeft = mapContainer.scrollLeft; scrollTop = mapContainer.scrollTop; };
+    const moveDrag = (x, y) => {
+      if (!isDraggingMap) return;
+      if (Math.abs(x - startX) + Math.abs(y - startY) > 4) dragMoved = true;
+      mapContainer.scrollLeft = scrollLeft - (x - startX);
+      mapContainer.scrollTop = scrollTop - (y - startY);
+    };
+    mapContainer.addEventListener('mousedown', (e) => { if (e.target.closest('.map-node')) return; startDrag(e.pageX, e.pageY); mapContainer.classList.add('cursor-grabbing'); });
+    window.addEventListener('mousemove', (e) => moveDrag(e.pageX, e.pageY));
+    window.addEventListener('mouseup', () => { isDraggingMap = false; mapContainer.classList.remove('cursor-grabbing'); });
+    mapContainer.addEventListener('touchstart', (e) => { if (e.target.closest('.map-node')) return; startDrag(e.touches[0].pageX, e.touches[0].pageY); }, { passive: true });
+    mapContainer.addEventListener('touchmove', (e) => { if (!isDraggingMap) return; e.preventDefault(); moveDrag(e.touches[0].pageX, e.touches[0].pageY); }, { passive: false });
     mapContainer.addEventListener('touchend', () => { isDraggingMap = false; });
-    
-    mapContainer.addEventListener('touchmove', (e) => {
-      if(!isDraggingMap) return;
-      if(!e.target.closest('.map-node')) { e.preventDefault(); }
-      const x = e.touches[0].pageX - mapContainer.offsetLeft;
-      const y = e.touches[0].pageY - mapContainer.offsetTop;
-      const walkX = (x - startX) * 1.5;
-      const walkY = (y - startY) * 1.5;
-      mapContainer.scrollLeft = scrollLeft - walkX;
-      mapContainer.scrollTop = scrollTop - walkY;
-    }, { passive: false });
 
-    document.getElementById('btn-export-map').addEventListener('click', async () => {
-      showToast('画像を出力しています...', 'ai');
-      try {
-        const mapContent = document.getElementById('map-content');
-        const imageElements = mapContent.querySelectorAll('img');
-        const originalSources = [];
-        
-        for (let i = 0; i < imageElements.length; i++) {
-            const img = imageElements[i];
-            originalSources.push(img.src);
-            try {
-                if (img.src && !img.src.startsWith('data:')) {
-                    const response = await fetch(img.src, { mode: 'cors', credentials: 'omit' });
-                    if (response.ok) {
-                        const blob = await response.blob();
-                        const reader = new FileReader();
-                        const base64Data = await new Promise((resolve) => {
-                             reader.onloadend = () => resolve(reader.result);
-                             reader.readAsDataURL(blob);
-                        });
-                        img.src = base64Data;
-                    }
-                }
-            } catch (fetchError) {}
-        }
-        
-        await new Promise(resolve => setTimeout(resolve, 50));
-
-        const canvas = await html2canvas(mapContent, {
-          backgroundColor: '#090a0f',
-          scale: window.devicePixelRatio || 2,
-          useCORS: true,
-          allowTaint: false
-        });
-        
-        for (let i = 0; i < imageElements.length; i++) {
-             imageElements[i].src = originalSources[i];
-        }
-
-        const link = document.createElement('a');
-        link.download = `hondana_constellation_${new Date().getTime()}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-        showToast('マップを画像として保存しました', 'success');
-      } catch(e) {
-        showToast('画像の保存に失敗しました。', 'error');
-      }
-    });
-
-    function getBookTime(book) {
-      let t;
-      if (book.endDate) t = new Date(book.endDate).getTime();
-      if (!t || isNaN(t)) {
-        if (book.startDate) t = new Date(book.startDate).getTime();
-      }
-      if (!t || isNaN(t)) t = book.addedAt;
-      if (!t || isNaN(t)) t = Date.now();
-      return t;
+    function getBookTime(b) {
+      for (const d of [b.endDate, b.startDate]) { const t = d ? new Date(d).getTime() : NaN; if (!isNaN(t)) return t; }
+      return b.addedAt || Date.now();
     }
 
     function renderMapping() {
-      const content = document.getElementById('map-content');
-      const svg = document.getElementById('map-svg');
-      const nodesContainer = document.getElementById('map-nodes');
-      const gridContainer = document.getElementById('map-grid');
-
-      svg.innerHTML = '';
-      nodesContainer.innerHTML = '';
-      gridContainer.innerHTML = '';
-
-      if (state.books.length === 0) return;
-
-      const processedBooks = state.books.map(b => ({
-        ...b,
-        safeGenre: b.genre && b.genre.trim() !== '' ? b.genre.trim() : '未分類',
-        time: getBookTime(b)
-      }));
-
-      const genres = [...new Set(processedBooks.map(b => b.safeGenre))].sort();
-      const times = processedBooks.map(b => b.time);
-      const minTime = Math.min(...times);
-      const maxTime = Math.max(...times);
-      const timeRange = Math.max(maxTime - minTime, 1000 * 60 * 60 * 24 * 30);
-      
-      const paddingX = 150;
-      const paddingY = 100;
-      const laneHeight = 200;
-      const containerWidth = mapContainer.clientWidth || 1000;
-      const mapWidth = Math.max(1000, containerWidth * 1.5);
-      const mapHeight = Math.max(600, genres.length * laneHeight + paddingY * 2);
-      
-      content.style.width = `${mapWidth}px`;
-      content.style.height = `${mapHeight}px`;
-
-      // 星座風なので、明確な横線は引かず、うっすらとしたジャンル表記だけを浮かばせる
-      genres.forEach((g, i) => {
-        const y = paddingY + i * laneHeight;
-        gridContainer.innerHTML += `
-          <div class="absolute left-10 text-[10px] font-medium text-white/30 tracking-widest uppercase" style="top: ${y - 12}px">${escapeHtml(g)}</div>
-        `;
-      });
-
-      const nodeCoords = {};
-      const MIN_DISTANCE = 80; // ノード同士の最小距離
-
-      processedBooks.forEach((book) => {
-        const genreIdx = genres.indexOf(book.safeGenre);
-        const ratio = timeRange === 0 ? 0.5 : (book.time - minTime) / timeRange;
-        let x = paddingX + ratio * (mapWidth - paddingX * 2);
-        // 星の散らばりを表現するため、Y軸方向のブレを大きく取る
-        const hash = Math.abs(book.id.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0));
-        let y = paddingY + genreIdx * laneHeight + ((hash % 120) - 60);
-        
-        // 衝突回避 (Force-directedの簡易版)
-        let maxIterations = 50;
-        let collision = true;
-        while (collision && maxIterations > 0) {
-            collision = false;
-            for (let id in nodeCoords) {
-                const existingNode = nodeCoords[id];
-                const dx = x - existingNode.x;
-                const dy = y - existingNode.y;
-                const distance = Math.sqrt(dx*dx + dy*dy);
-                
-                if (distance < MIN_DISTANCE) {
-                    collision = true;
-                    // 重なっている場合は外側へ反発させる
-                    const angle = distance === 0 ? Math.random() * Math.PI * 2 : Math.atan2(dy, dx);
-                    x += Math.cos(angle) * 15;
-                    y += Math.sin(angle) * 15;
-                }
-            }
-            maxIterations--;
-        }
-
-        // 画面外に出ないように微調整
-        x = Math.max(40, Math.min(mapWidth - 40, x));
-        y = Math.max(40, Math.min(mapHeight - 40, y));
-
-        nodeCoords[book.id] = { x, y };
-
-        const isSource = state.isConnectMode && state.connectSourceId === book.id;
-        const ringClass = isSource ? 'ring-4 ring-indigo-400 border-white shadow-[0_0_20px_rgba(255,255,255,0.8)]' : 'border-white/20 hover:border-white hover:shadow-[0_0_15px_rgba(255,255,255,0.5)]';
-        const fallbackImg = `https://placehold.co/100x150/f3f4f6/9ca3af?text=${encodeURIComponent(book.title.substring(0,2))}`;
-
-        const nodeHtml = `
-          <div class="map-node absolute transform -translate-x-1/2 -translate-y-1/2 pointer-events-auto cursor-pointer group flex flex-col items-center gap-2 hover:z-50 z-10 transition-all duration-300 ${isSource ? 'scale-110 z-50' : 'hover:scale-110'}" 
-               style="left: ${x}px; top: ${y}px;" data-id="${book.id}">
-            <div class="w-14 h-14 rounded-full overflow-hidden shadow-lg border-2 ${ringClass} transition-all">
-              <img src="${escapeHtml(book.coverUrl || fallbackImg)}" class="w-full h-full object-cover opacity-90 group-hover:opacity-100" onerror="this.src='${fallbackImg}'">
-            </div>
-            <span class="text-[10px] font-medium text-white/70 group-hover:text-white truncate max-w-[120px] transition-colors drop-shadow-md">${escapeHtml(book.title)}</span>
-          </div>
-        `;
-        nodesContainer.insertAdjacentHTML('beforeend', nodeHtml);
-      });
-
-      const svgNs = "http://www.w3.org/2000/svg";
-      state.links.forEach(link => {
-        const s = nodeCoords[link.source];
-        const t = nodeCoords[link.target];
-        if(s && t) {
-          const path = document.createElementNS(svgNs, "path");
-          const cx = (s.x + t.x) / 2;
-          // 星座の線をイメージして、少し発光する細い白線にする
-          path.setAttribute("d", `M ${s.x} ${s.y} C ${cx} ${s.y}, ${cx} ${t.y}, ${t.x} ${t.y}`);
-          path.setAttribute("fill", "transparent");
-          path.setAttribute("stroke", "rgba(255,255,255,0.25)");
-          path.setAttribute("stroke-width", "1.5");
-          path.setAttribute("class", "cursor-pointer pointer-events-auto transition-all hover:stroke-indigo-400 hover:stroke-[3px] drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]");
-          
-          path.addEventListener('click', async (e) => {
-            if(state.isPortfolioMode || !state.isConnectMode) return;
-            state.links = state.links.filter(l => !(l.source === link.source && l.target === link.target));
-            await deleteLinkFromCloud(link);
-            renderMapping();
-            showToast('星座の線を消去しました');
-          });
-          svg.appendChild(path);
-        }
-      });
-
-      document.querySelectorAll('.map-node').forEach(node => {
-        node.addEventListener('click', async (e) => {
-          e.stopPropagation();
-          const id = node.getAttribute('data-id');
-          if (state.isConnectMode) {
-            if (!state.connectSourceId) {
-              state.connectSourceId = id;
-              renderMapping(); 
-            } else {
-              if (state.connectSourceId !== id) {
-                const exists = state.links.some(l => 
-                  (l.source === state.connectSourceId && l.target === id) ||
-                  (l.target === state.connectSourceId && l.source === id)
-                );
-                if(!exists) {
-                  const newLink = { source: state.connectSourceId, target: id };
-                  state.links.push(newLink);
-                  await saveLinkToCloud(newLink);
-                  showToast('本同士をリンクしました');
-                }
-              }
-              state.connectSourceId = null;
-              renderMapping();
-            }
-          } else {
-            window.openBookDetail(id);
-          }
-        });
-      });
-    }
-
-    /* STREAMING_CHUNK:Serendipity Logic... */
-    function initSerendipityView() {
-      const container = document.getElementById('serendipity-container');
-      const canvas = document.getElementById('serendipity-canvas');
-      const emptyState = document.getElementById('serendipity-empty-state');
-      container.innerHTML = '';
-      floatingElements = [];
-
-      if (state.phrases.length === 0) {
-        emptyState.classList.remove('hidden');
-        emptyState.classList.add('flex');
+      const content = $('map-content'), svg = $('map-svg'), nodes = $('map-nodes'), grid = $('map-grid');
+      svg.innerHTML = ''; nodes.innerHTML = ''; grid.innerHTML = '';
+      if (!state.books.length) {
+        grid.innerHTML = '<div class="absolute inset-0 flex items-center justify-center text-sm text-white/40 font-serif-jp">本を追加すると、ここに星座が現れます。</div>';
         return;
       }
+      const books = state.books.map(b => ({ ...b, g: genreOf(b), time: getBookTime(b) }));
+      const genres = [...new Set(books.map(b => b.g))].sort((a, b) => a.localeCompare(b, 'ja'));
+      const times = books.map(b => b.time);
+      const minT = Math.min(...times);
+      const range = Math.max(Math.max(...times) - minT, 1000 * 60 * 60 * 24 * 30);
+      const padX = 150, padY = 110, lane = 190;
+      const W = Math.max(1000, (mapContainer.clientWidth || 1000) * 1.5);
+      const H = Math.max(600, genres.length * lane + padY * 2 - lane / 2);
+      content.style.width = `${W}px`; content.style.height = `${H}px`;
 
-      emptyState.classList.add('hidden');
-      emptyState.classList.remove('flex');
+      // 背景の星
+      let stars = '', seed = 7;
+      const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+      for (let i = 0; i < 140; i++) {
+        const size = rnd() < 0.85 ? 1 : 2;
+        stars += `<div class="absolute rounded-full bg-white" style="left:${Math.round(rnd() * W)}px;top:${Math.round(rnd() * H)}px;width:${size}px;height:${size}px;opacity:${(0.15 + rnd() * 0.5).toFixed(2)}"></div>`;
+      }
+      grid.innerHTML = stars + genres.map((g, i) =>
+        `<div class="absolute left-6 text-[10px] font-medium text-white/35 tracking-widest" style="top:${padY + i * lane - 14}px">${esc(g)}</div>`).join('');
 
-      const containerWidth = container.clientWidth;
-      const containerHeight = container.clientHeight;
-      
-      canvas.width = containerWidth;
-      canvas.height = containerHeight;
-
-      // ランダムに最大30個のフレーズを抽出
-      const displayPhrases = [...state.phrases].sort(() => 0.5 - Math.random()).slice(0, 30);
-
-      displayPhrases.forEach((phrase) => {
-        const book = state.books.find(b => b.id === phrase.bookId);
-        const bookTitle = book ? book.title : '書籍未指定';
-
-        const el = document.createElement('div');
-        el.className = 'floating-phrase glass-card selectable-text';
-        el.innerHTML = `
-          <div class="floating-phrase-text">${escapeHtml(phrase.text)}</div>
-          <div class="floating-phrase-meta"><i class="ph ph-book-open"></i> ${escapeHtml(bookTitle)}</div>
-        `;
-        
-        el.addEventListener('click', () => {
-           if(phrase.bookId) window.openBookDetail(phrase.bookId);
-        });
-
-        el.addEventListener('mouseenter', () => { el.dataset.hover = 'true'; });
-        el.addEventListener('mouseleave', () => { el.dataset.hover = 'false'; });
-
-        container.appendChild(el);
-
-        const rect = el.getBoundingClientRect();
-        const width = rect.width;
-        const height = rect.height;
-        
-        const x = Math.random() * Math.max(0, containerWidth - width);
-        const y = Math.random() * Math.max(0, containerHeight - height);
-        
-        const angle = Math.random() * Math.PI * 2;
-        // 少しゆっくりと漂わせる
-        const speed = 0.08 + Math.random() * 0.15;
-        const vx = Math.cos(angle) * speed;
-        const vy = Math.sin(angle) * speed;
-        const phase = Math.random() * Math.PI * 2;
-
-        floatingElements.push({ el, x, y, vx, vy, width, height, phase });
+      const coords = {};
+      books.forEach(b => {
+        const gi = genres.indexOf(b.g);
+        let x = padX + (b.time - minT) / range * (W - padX * 2);
+        let y = padY + gi * lane + ((hashStr(b.id) % 110) - 55);
+        for (let iter = 0; iter < 50; iter++) {
+          let hit = false;
+          for (const id in coords) {
+            const dx = x - coords[id].x, dy = y - coords[id].y, dist = Math.hypot(dx, dy);
+            if (dist < 84) { hit = true; const a = dist === 0 ? (hashStr(b.id + iter) % 628) / 100 : Math.atan2(dy, dx); x += Math.cos(a) * 15; y += Math.sin(a) * 15; }
+          }
+          if (!hit) break;
+        }
+        x = clamp(x, 40, W - 40); y = clamp(y, 40, H - 40);
+        coords[b.id] = { x, y };
+        const isSrc = state.isConnectMode && state.connectSourceId === b.id;
+        nodes.insertAdjacentHTML('beforeend', `
+          <div class="map-node absolute -translate-x-1/2 -translate-y-1/2 pointer-events-auto cursor-pointer group flex flex-col items-center gap-2 z-10 hover:z-50 transition ${isSrc ? 'scale-110 z-50' : 'hover:scale-110'}" style="left:${x}px;top:${y}px" data-id="${esc(b.id)}">
+            <div class="w-14 h-14 rounded-full overflow-hidden border-2 transition ${isSrc ? 'border-amber-300 ring-4 ring-amber-400/40 shadow-[0_0_24px_rgba(251,191,36,.7)]' : 'border-white/25 group-hover:border-white group-hover:shadow-[0_0_16px_rgba(255,255,255,.5)]'}">
+              <div class="w-full -mt-[25%]">${coverHtml(b)}</div>
+            </div>
+            <span class="text-[10px] font-medium text-white/70 group-hover:text-white truncate max-w-[120px] drop-shadow">${esc(b.title)}</span>
+          </div>`);
       });
 
-      startSerendipityAnimation();
-    }
-
-    function startSerendipityAnimation() {
-      if (serendipityReqId) cancelAnimationFrame(serendipityReqId);
-      let lastTime = performance.now();
-      
-      const canvas = document.getElementById('serendipity-canvas');
-      const ctx = canvas.getContext('2d');
-
-      function animate(time) {
-        const container = document.getElementById('view-serendipity');
-        if (container.classList.contains('hidden')) return;
-
-        const cWidth = canvas.clientWidth;
-        const cHeight = canvas.clientHeight;
-        
-        // リサイズ対応
-        if(canvas.width !== cWidth || canvas.height !== cHeight) {
-           canvas.width = cWidth;
-           canvas.height = cHeight;
+      const ns = 'http://www.w3.org/2000/svg';
+      state.links.forEach(link => {
+        const s = coords[link.source], t = coords[link.target];
+        if (!s || !t) return;
+        const cx = (s.x + t.x) / 2;
+        const d = `M ${s.x} ${s.y} C ${cx} ${s.y}, ${cx} ${t.y}, ${t.x} ${t.y}`;
+        const line = document.createElementNS(ns, 'path');
+        line.setAttribute('d', d); line.setAttribute('fill', 'none');
+        line.setAttribute('stroke', 'rgba(255,255,255,0.3)'); line.setAttribute('stroke-width', '1.5');
+        line.style.pointerEvents = 'none';
+        svg.appendChild(line);
+        if (state.isConnectMode && !state.isPortfolioMode) {
+          const hit = document.createElementNS(ns, 'path'); // タップしやすい太い透明線
+          hit.setAttribute('d', d); hit.setAttribute('fill', 'none');
+          hit.setAttribute('stroke', 'transparent'); hit.setAttribute('stroke-width', '14');
+          hit.style.cursor = 'pointer';
+          hit.addEventListener('mouseenter', () => line.setAttribute('stroke', 'rgba(251,191,36,.9)'));
+          hit.addEventListener('mouseleave', () => line.setAttribute('stroke', 'rgba(255,255,255,0.3)'));
+          hit.addEventListener('click', async () => {
+            state.links = state.links.filter(l => !(l.source === link.source && l.target === link.target));
+            renderMapping();
+            showToast('星座の線を消しました');
+            await cloudDelete('links', linkId(link));
+          });
+          svg.appendChild(hit);
         }
+      });
 
-        const dt = Math.min((time - lastTime) / 16.66, 3);
-        lastTime = time;
-
-        ctx.clearRect(0, 0, cWidth, cHeight);
-
-        // 要素の位置更新
-        floatingElements.forEach(item => {
-          if (item.el.dataset.hover === 'true') {
-             item.el.style.transform = `translate(${item.x}px, ${item.y}px) scale(1.03)`;
-             return; 
-          }
-
-          item.x += item.vx * dt;
-          item.y += item.vy * dt;
-
-          // 画面端での反射
-          if (item.x < 0) { item.x = 0; item.vx *= -1; }
-          else if (item.x + item.width > cWidth) { item.x = cWidth - item.width; item.vx *= -1; }
-
-          if (item.y < 0) { item.y = 0; item.vy *= -1; }
-          else if (item.y + item.height > cHeight) { item.y = cHeight - item.height; item.vy *= -1; }
-
-          const wobble = Math.sin(time / 2000 + item.phase) * 5; 
-          item.el.style.transform = `translate(${item.x}px, ${item.y + wobble}px) scale(1)`;
-        });
-
-        // 偶然の結びつき（線）の描画
-        ctx.lineWidth = 1.5;
-        const connectionDistance = 350; // 線が結ばれる距離の閾値
-
-        for (let i = 0; i < floatingElements.length; i++) {
-          for (let j = i + 1; j < floatingElements.length; j++) {
-            const a = floatingElements[i];
-            const b = floatingElements[j];
-            
-            // 各要素の中心座標を計算
-            const ax = a.x + a.width / 2;
-            const ay = a.y + a.height / 2;
-            const bx = b.x + b.width / 2;
-            const by = b.y + b.height / 2;
-            
-            const dx = ax - bx;
-            const dy = ay - by;
-            const dist = Math.sqrt(dx*dx + dy*dy);
-            
-            // 一定距離以内に近づいたら、インスピレーションの線を描画
-            if (dist < connectionDistance) {
-              const opacity = Math.pow(1 - (dist / connectionDistance), 2); // 近いほど濃くなる
-              ctx.strokeStyle = `rgba(99, 102, 241, ${opacity * 0.5})`; // インディゴカラー
-              ctx.beginPath();
-              ctx.moveTo(ax, ay);
-              ctx.lineTo(bx, by);
-              ctx.stroke();
-            }
+      nodes.querySelectorAll('.map-node').forEach(node => node.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = node.dataset.id;
+        if (!state.isConnectMode) { openDetail(id); return; }
+        if (!state.connectSourceId) { state.connectSourceId = id; renderMapping(); return; }
+        if (state.connectSourceId !== id) {
+          const a = state.connectSourceId;
+          const exists = state.links.some(l => (l.source === a && l.target === id) || (l.source === id && l.target === a));
+          if (!exists) {
+            const link = { source: a, target: id };
+            state.links.push(link);
+            showToast('本と本を結びました');
+            cloudSet('links', linkId(link), link);
           }
         }
-
-        serendipityReqId = requestAnimationFrame(animate);
-      }
-      
-      serendipityReqId = requestAnimationFrame(animate);
+        state.connectSourceId = null;
+        renderMapping();
+      }));
     }
 
-    function stopSerendipityAnimation() {
-      if (serendipityReqId) {
-        cancelAnimationFrame(serendipityReqId);
-        serendipityReqId = null;
-      }
-    }
-
-    window.addEventListener('resize', () => {
-      if (state.activeTab === 'bookshelf') renderBookshelf();
-      else if (state.activeTab === 'mapping') renderMapping();
-      else if (state.activeTab === 'serendipity') {
-         stopSerendipityAnimation();
-         setTimeout(initSerendipityView, 100);
+    $('btn-export-map').addEventListener('click', async () => {
+      if (!state.books.length) return;
+      showToast('画像を書き出しています...', 'info');
+      const content = $('map-content');
+      const imgs = [...content.querySelectorAll('img')];
+      const originals = imgs.map(i => i.src);
+      try {
+        // 外部画像を一時的にdataURLへ(CORSで描けない画像は自動の装丁が使われます)
+        for (const img of imgs) {
+          if (img.src.startsWith('data:')) continue;
+          try {
+            const res = await fetch(img.src, { mode: 'cors', credentials: 'omit' });
+            if (!res.ok) throw 0;
+            const blob = await res.blob();
+            img.src = await new Promise(r => { const fr = new FileReader(); fr.onloadend = () => r(fr.result); fr.readAsDataURL(blob); });
+          } catch { img.style.visibility = 'hidden'; }
+        }
+        const canvas = await html2canvas(content, { backgroundColor: '#090a0f', scale: Math.min(window.devicePixelRatio || 2, 2), useCORS: true });
+        const a = document.createElement('a');
+        a.download = `hondana_constellation_${Date.now()}.png`;
+        a.href = canvas.toDataURL('image/png');
+        a.click();
+        showToast('星座を画像として保存しました');
+      } catch (e) {
+        console.error(e);
+        showToast('画像の保存に失敗しました', 'error');
+      } finally {
+        imgs.forEach((img, i) => { img.src = originals[i]; img.style.visibility = ''; });
       }
     });
-    
+
+    /* ================= Serendipity ================= */
+    let serendipityReq = null;
+    let floating = [];
+
+    function initSerendipityView() {
+      const container = $('serendipity-container');
+      const canvas = $('serendipity-canvas');
+      container.innerHTML = '';
+      floating = [];
+      if (!state.phrases.length) { $('serendipity-empty').classList.replace('hidden', 'flex'); stopSerendipity(); return; }
+      $('serendipity-empty').classList.replace('flex', 'hidden');
+      const W = container.clientWidth, H = container.clientHeight;
+      canvas.width = W; canvas.height = H;
+      const maxCount = W < 640 ? 12 : 26;
+      const picks = [...state.phrases].sort(() => Math.random() - 0.5).slice(0, maxCount);
+      picks.forEach(p => {
+        const b = state.books.find(x => x.id === p.bookId);
+        const el = document.createElement('div');
+        el.className = 'floating-phrase';
+        el.innerHTML = `<div class="floating-phrase-text">${esc(p.text)}</div>
+          <div class="floating-phrase-meta"><i class="ph ph-book-open"></i> ${esc(b ? b.title : '書籍未指定')}${p.page ? ` p.${esc(p.page)}` : ''}</div>`;
+        el.addEventListener('click', () => { if (b) openDetail(b.id); });
+        el.addEventListener('mouseenter', () => el.dataset.hover = '1');
+        el.addEventListener('mouseleave', () => el.dataset.hover = '');
+        container.appendChild(el);
+        const r = el.getBoundingClientRect();
+        const angle = Math.random() * Math.PI * 2, speed = 0.08 + Math.random() * 0.14;
+        floating.push({
+          el, w: r.width, h: r.height,
+          x: Math.random() * Math.max(0, W - r.width), y: Math.random() * Math.max(0, H - r.height),
+          vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, phase: Math.random() * Math.PI * 2
+        });
+      });
+      startSerendipity();
+    }
+
+    function startSerendipity() {
+      stopSerendipity();
+      const canvas = $('serendipity-canvas');
+      const ctx = canvas.getContext('2d');
+      let last = performance.now();
+      const loop = (time) => {
+        if ($('view-serendipity').classList.contains('hidden') || document.hidden) { serendipityReq = requestAnimationFrame(loop); last = time; return; }
+        const W = canvas.clientWidth, H = canvas.clientHeight;
+        if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
+        const dt = Math.min((time - last) / 16.67, 3);
+        last = time;
+        ctx.clearRect(0, 0, W, H);
+        for (const it of floating) {
+          if (it.el.dataset.hover) { it.el.style.transform = `translate(${it.x}px, ${it.y}px) scale(1.03)`; continue; }
+          it.x += it.vx * dt; it.y += it.vy * dt;
+          if (it.x < 0) { it.x = 0; it.vx *= -1; } else if (it.x + it.w > W) { it.x = Math.max(0, W - it.w); it.vx *= -1; }
+          if (it.y < 0) { it.y = 0; it.vy *= -1; } else if (it.y + it.h > H) { it.y = Math.max(0, H - it.h); it.vy *= -1; }
+          it.el.style.transform = `translate(${it.x}px, ${it.y + Math.sin(time / 2000 + it.phase) * 5}px)`;
+        }
+        ctx.lineWidth = 1.2;
+        const reach = Math.min(340, W * 0.5);
+        for (let i = 0; i < floating.length; i++) for (let j = i + 1; j < floating.length; j++) {
+          const a = floating[i], b = floating[j];
+          const ax = a.x + a.w / 2, ay = a.y + a.h / 2, bx = b.x + b.w / 2, by = b.y + b.h / 2;
+          const dist = Math.hypot(ax - bx, ay - by);
+          if (dist < reach) {
+            ctx.strokeStyle = `rgba(166, 120, 60, ${Math.pow(1 - dist / reach, 2) * 0.45})`;
+            ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+          }
+        }
+        serendipityReq = requestAnimationFrame(loop);
+      };
+      serendipityReq = requestAnimationFrame(loop);
+    }
+    function stopSerendipity() { if (serendipityReq) cancelAnimationFrame(serendipityReq); serendipityReq = null; }
+    $('btn-shuffle').addEventListener('click', initSerendipityView);
+
+    /* ================= その他 ================= */
+    let lastWidth = window.innerWidth;
+    window.addEventListener('resize', debounce(() => {
+      if (window.innerWidth === lastWidth) return; // スマホのアドレスバー伸縮で再描画しない
+      lastWidth = window.innerWidth;
+      if (state.activeTab === 'bookshelf') renderBookshelf();
+      else refreshActiveTab();
+    }, 150));
+
+    switchTab('bookshelf');
     initApp();
   </script>
 </body>
