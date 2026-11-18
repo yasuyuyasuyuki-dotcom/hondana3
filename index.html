@@ -5,191 +5,179 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="theme-color" content="#f5f1ea">
+  <meta name="theme-color" content="#f7f6f3">
   <title>hondana - デジタル読書記録＆本棚</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Noto+Serif+JP:wght@300;400;500;600&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      --paper: #f5f1ea;
-      --ink: #1c1917;
-      --case: #efe6d6;
-      --oak-light: #dcc29b;
-      --oak: #c4a073;
-      --oak-dark: #9c7a50;
+      --wall: #f7f6f3;
+      --plinth: #efede8;
+      --ink: #141413;
+      --mute: #8c8a84;
+      --line: #e3e1db;
     }
+    html { -webkit-text-size-adjust: 100%; }
     body {
-      font-family: 'Inter', 'Hiragino Sans', sans-serif;
-      background: var(--paper);
+      font-family: 'Inter', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+      background: var(--wall);
       color: var(--ink);
       -webkit-tap-highlight-color: transparent;
       overscroll-behavior-y: none;
+      -webkit-font-smoothing: antialiased;
     }
+    ::selection { background: var(--ink); color: var(--wall); }
     .font-serif-jp { font-family: 'Noto Serif JP', serif; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     .pt-safe { padding-top: env(safe-area-inset-top); }
 
-    /* ===== 本棚 ===== */
-    .bookcase {
-      background:
-        linear-gradient(to right, rgba(0,0,0,.06), transparent 6%, transparent 94%, rgba(0,0,0,.06)),
-        var(--case);
-      border: 10px solid var(--oak);
-      border-top-width: 14px;
-      border-radius: 6px;
-      padding: 8px 12px 18px;
-      box-shadow: inset 0 0 24px rgba(80,55,25,.12), 0 18px 30px -18px rgba(60,40,20,.45);
+    /* ===== 基本パーツ ===== */
+    .label { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--mute); font-weight: 500; }
+    .text-mute { color: var(--mute); }
+    .hair { border-color: var(--line); }
+    .field {
+      background: transparent; border: 0; border-bottom: 1px solid var(--line); border-radius: 0;
+      padding: .55rem 0; font-size: 14px; outline: none; width: 100%; color: var(--ink);
+      transition: border-color .2s;
     }
-    .shelf {
-      position: relative;
-      display: flex;
-      align-items: flex-end;
-      gap: 3px;
-      min-height: 210px;
-      padding: 26px 6px 0;
-      margin-bottom: 30px;
+    .field:focus { border-color: var(--ink); }
+    .field::placeholder { color: #bdbab3; }
+    .field:disabled { color: var(--ink); opacity: 1; -webkit-text-fill-color: var(--ink); }
+    textarea.field { border: 1px solid var(--line); padding: .9rem 1rem; line-height: 1.9; }
+    textarea.field:focus { border-color: var(--ink); }
+    select.field { -webkit-appearance: none; appearance: none; cursor: pointer; }
+    .btn-ink {
+      background: var(--ink); color: var(--wall); font-size: 11px; letter-spacing: .18em;
+      padding: .8rem 1.5rem; transition: opacity .2s; text-transform: uppercase; white-space: nowrap;
     }
-    .shelf::before { /* 棚板の上に落ちる影 */
-      content: '';
-      position: absolute; left: 0; right: 0; bottom: 0; height: 10px;
-      background: linear-gradient(to top, rgba(60,40,20,.18), transparent);
-      pointer-events: none;
+    .btn-ink:hover { opacity: .82; }
+    .btn-text { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--mute); transition: color .2s; white-space: nowrap; }
+    .btn-text:hover { color: var(--ink); }
+    .link-tab {
+      font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--mute);
+      padding-bottom: 6px; border-bottom: 1px solid transparent; transition: color .2s, border-color .2s; white-space: nowrap;
     }
-    .shelf::after { /* 棚板 */
-      content: '';
-      position: absolute; left: -12px; right: -12px; bottom: -14px; height: 14px;
-      background: linear-gradient(var(--oak-light), var(--oak) 55%, var(--oak-dark));
-      box-shadow: 0 6px 10px -4px rgba(60,40,20,.35);
-    }
-    .shelf:last-child { margin-bottom: 0; }
-
-    .spine {
-      position: relative;
-      flex-shrink: 0;
-      border-radius: 2px 2px 1px 1px;
-      cursor: pointer;
-      display: flex; flex-direction: column; align-items: center;
-      padding: 18px 0 18px;
-      transition: transform .25s cubic-bezier(.2,.8,.2,1);
-      box-shadow:
-        inset 2px 0 2px rgba(255,255,255,.22),
-        inset -3px 0 5px rgba(0,0,0,.2),
-        1px 0 2px rgba(0,0,0,.18);
-      z-index: 1;
-    }
-    .spine:hover, .spine:focus-visible { transform: translateY(-10px); z-index: 20; outline: none; }
-    .spine .band { position: absolute; left: 0; right: 0; height: 2px; background: currentColor; opacity: .35; }
-    .spine-title {
-      writing-mode: vertical-rl;
-      text-orientation: mixed;
-      font-family: 'Noto Serif JP', serif;
-      font-weight: 600;
-      letter-spacing: .12em;
-      line-height: 1;
-      flex: 1 1 auto;
-      min-height: 0;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-    }
-    .spine-author {
-      writing-mode: vertical-rl;
-      text-orientation: mixed;
-      font-size: 9px;
-      letter-spacing: .08em;
-      opacity: .75;
-      max-height: 26%;
-      overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
-      margin-top: 6px; flex-shrink: 0;
-    }
-    .ribbon {
-      position: absolute; top: -10px; right: 22%;
-      width: 5px; height: 22px; background: #b3261e;
-      clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
-    }
-    .spine-pop {
-      position: absolute; bottom: calc(100% + 14px); left: 50%;
-      transform: translateX(-50%) translateY(6px);
-      width: 104px; opacity: 0; pointer-events: none;
-      transition: opacity .2s, transform .2s;
-    }
-    @media (hover: hover) {
-      .spine:hover .spine-pop { opacity: 1; transform: translateX(-50%) translateY(0); }
-    }
-
-    .face { flex-shrink: 0; cursor: pointer; transition: transform .25s cubic-bezier(.2,.8,.2,1); position: relative; }
-    .face:hover { transform: translateY(-8px) rotate(-1deg); z-index: 5; }
+    .link-tab:hover { color: var(--ink); }
+    .link-tab.active { color: var(--ink); border-color: var(--ink); }
+    .link-tab .n { margin-left: .45em; font-size: 10px; letter-spacing: 0; opacity: .7; }
 
     /* ===== 表紙 ===== */
     .cover {
-      position: relative;
-      aspect-ratio: 2 / 3;
-      overflow: hidden;
-      border-radius: 2px 4px 4px 2px;
-      container-type: inline-size;
-      box-shadow: -1px 0 0 rgba(0,0,0,.08), 4px 6px 14px rgba(40,30,20,.25);
-      background: #ddd;
-    }
-    .cover::after { /* 背の折り目 */
-      content: ''; position: absolute; top: 0; bottom: 0; left: 4%; width: 2px;
-      background: linear-gradient(to right, rgba(0,0,0,.12), rgba(255,255,255,.25));
-      pointer-events: none;
+      position: relative; aspect-ratio: 2 / 3; overflow: hidden; border-radius: 1px;
+      container-type: inline-size; background: var(--plinth);
+      box-shadow: 0 1px 1px rgba(0,0,0,.05), 0 20px 30px -22px rgba(0,0,0,.4);
     }
     .cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
     .gen-cover {
-      position: absolute; inset: 0;
-      display: flex; flex-direction: column; justify-content: space-between;
-      padding: 14cqw 11cqw 11cqw 14cqw;
-      font-family: 'Noto Serif JP', serif;
+      position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between;
+      padding: 13cqw 12cqw; font-family: 'Noto Serif JP', serif;
     }
-    .gen-cover .gc-title { font-size: 11.5cqw; font-weight: 700; line-height: 1.35; word-break: break-word; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
-    .gen-cover .gc-rule { width: 22cqw; height: 1px; background: currentColor; opacity: .5; margin: 6cqw 0; }
-    .gen-cover .gc-author { font-size: 7.5cqw; opacity: .8; line-height: 1.4; }
+    .gen-cover .gc-title { font-size: 9.5cqw; font-weight: 500; line-height: 1.55; letter-spacing: .04em; word-break: break-word; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+    .gen-cover .gc-author { font-size: 5.8cqw; letter-spacing: .14em; opacity: .7; line-height: 1.5; }
+    .gen-cover .gc-mark { width: 10cqw; height: 1px; background: currentColor; opacity: .5; margin-bottom: 4cqw; }
+
+    /* ===== Gallery(展示) ===== */
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+      column-gap: 64px; row-gap: 88px;
+    }
+    @media (max-width: 640px) {
+      .gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 28px; row-gap: 56px; }
+    }
+    .work { cursor: pointer; outline: none; }
+    .work-frame { position: relative; padding: 0 6%; }
+    .work-frame::before { /* スポットライト */
+      content: ''; position: absolute; left: -35%; right: -35%; top: -40%; height: 95%;
+      background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,1), rgba(255,255,255,0) 65%);
+      opacity: 0; transition: opacity .6s; pointer-events: none;
+    }
+    .work .cover { transition: transform .6s cubic-bezier(.2,.8,.2,1), box-shadow .6s; }
+    .work:hover .work-frame::before, .work:focus-visible .work-frame::before { opacity: 1; }
+    .work:hover .cover, .work:focus-visible .cover { transform: translateY(-6px); box-shadow: 0 1px 1px rgba(0,0,0,.05), 0 34px 40px -24px rgba(0,0,0,.45); }
+    .work.is-wish .cover { filter: grayscale(1); opacity: .45; }
+    .work.is-wish:hover .cover { opacity: .75; }
+    .caption { margin-top: 22px; padding: 0 6%; }
+    .caption .no { font-size: 9px; letter-spacing: .22em; color: var(--mute); }
+    .caption h3 { font-family: 'Noto Serif JP', serif; font-size: 13px; font-weight: 500; line-height: 1.6; margin-top: 6px; letter-spacing: .03em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .caption .by { font-size: 11px; color: var(--mute); margin-top: 2px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .caption .meta { font-size: 10px; letter-spacing: .12em; color: var(--mute); margin-top: 10px; display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .progress-hair { height: 1px; background: var(--line); margin-top: 8px; position: relative; }
+    .progress-hair > i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--ink); }
+
+    /* ===== Archive(背表紙) ===== */
+    .vitrine { position: relative; display: flex; align-items: flex-end; gap: 2px; min-height: 200px; margin-bottom: 72px; }
+    .vitrine::after { content: ''; position: absolute; left: -16px; right: -16px; bottom: -1px; height: 1px; background: var(--ink); opacity: .85; }
+    .vitrine::before { content: ''; position: absolute; left: -16px; right: -16px; bottom: -18px; height: 17px; background: linear-gradient(rgba(0,0,0,.045), transparent); }
+    .spine {
+      position: relative; flex-shrink: 0; cursor: pointer; outline: none;
+      display: flex; flex-direction: column; align-items: center; padding: 16px 0;
+      transition: transform .5s cubic-bezier(.2,.8,.2,1);
+      box-shadow: inset 1px 0 0 rgba(255,255,255,.18), inset -2px 0 3px rgba(0,0,0,.12);
+    }
+    .spine:hover, .spine:focus-visible { transform: translateY(-8px); z-index: 20; }
+    .spine.is-wish { filter: grayscale(1); opacity: .45; }
+    .spine-title {
+      writing-mode: vertical-rl; text-orientation: mixed; font-family: 'Noto Serif JP', serif;
+      font-weight: 500; letter-spacing: .14em; line-height: 1;
+      flex: 1 1 auto; min-height: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    }
+    .spine-author {
+      writing-mode: vertical-rl; text-orientation: mixed; font-size: 9px; letter-spacing: .1em; opacity: .65;
+      max-height: 26%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; margin-top: 8px; flex-shrink: 0;
+    }
+    .spine .mark { position: absolute; bottom: 7px; width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: .8; }
+    .spine-pop {
+      position: absolute; bottom: calc(100% + 18px); left: 50%; width: 112px;
+      transform: translateX(-50%) translateY(6px); opacity: 0; pointer-events: none; transition: opacity .3s, transform .3s;
+    }
+    .spine-pop .pop-cap { margin-top: 10px; font-size: 10px; text-align: center; color: var(--ink); font-family: 'Noto Serif JP', serif; line-height: 1.5; }
+    @media (hover: hover) { .spine:hover .spine-pop { opacity: 1; transform: translateX(-50%) translateY(0); } }
 
     /* ===== モーダル・トースト ===== */
-    .modal-panel { transform: translateY(16px) scale(.98); opacity: 0; transition: transform .3s cubic-bezier(.16,1,.3,1), opacity .2s; }
+    .modal-panel { transform: translateY(14px); opacity: 0; transition: transform .45s cubic-bezier(.16,1,.3,1), opacity .3s; }
     .modal-open .modal-panel { transform: none; opacity: 1; }
-    .toast { transform: translateY(16px); opacity: 0; transition: all .3s cubic-bezier(.16,1,.3,1); }
+    .toast { transform: translateY(12px); opacity: 0; transition: all .35s cubic-bezier(.16,1,.3,1); }
     .toast.show { transform: none; opacity: 1; }
-
-    input[type=range] { accent-color: #1c1917; }
+    input[type=range] { accent-color: var(--ink); }
+    .fade-in { animation: fade .6s ease both; }
+    @keyframes fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
     /* ===== マップ ===== */
-    .bg-space { background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%); }
+    .bg-chart {
+      background-color: #f1efea;
+      background-image: radial-gradient(rgba(20,20,19,.13) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
     #map-container { touch-action: none; }
 
     /* ===== セレンディピティ ===== */
-    .bg-serendipity { background: linear-gradient(135deg, #fbf9f5 0%, #ece8e1 100%); }
     .floating-phrase {
-      position: absolute; top: 0; left: 0;
-      width: max-content; max-width: min(360px, 80vw);
-      padding: 1.1rem 1.3rem;
-      background: rgba(255,255,255,.82);
-      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,.7);
-      border-radius: 14px;
-      box-shadow: 0 8px 30px rgba(60,45,30,.08);
-      cursor: pointer; will-change: transform; z-index: 10;
-      transition: box-shadow .3s, border-color .3s, background .3s;
+      position: absolute; top: 0; left: 0; width: max-content; max-width: min(340px, 78vw);
+      padding: 1.25rem 1.4rem; background: rgba(255,255,255,.88);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(20,20,19,.06); border-radius: 1px;
+      box-shadow: 0 18px 40px -28px rgba(0,0,0,.35);
+      cursor: pointer; will-change: transform; z-index: 10; transition: box-shadow .4s, background .4s;
     }
-    .floating-phrase:hover { z-index: 50 !important; background: rgba(255,255,255,.96); box-shadow: 0 12px 40px rgba(60,45,30,.16); border-color: rgba(180,140,90,.35); }
-    .floating-phrase-text { font-family: 'Noto Serif JP', serif; font-size: .9rem; line-height: 1.85; white-space: pre-wrap; word-break: break-word; }
-    .floating-phrase-meta { font-size: .68rem; color: #78716c; text-align: right; max-height: 0; opacity: 0; overflow: hidden; transition: all .3s; }
-    .floating-phrase:hover .floating-phrase-meta { max-height: 30px; opacity: 1; margin-top: .6rem; }
+    .floating-phrase:hover { z-index: 50 !important; background: #fff; box-shadow: 0 24px 50px -24px rgba(0,0,0,.4); }
+    .floating-phrase-text { font-family: 'Noto Serif JP', serif; font-size: .88rem; line-height: 2; white-space: pre-wrap; word-break: break-word; letter-spacing: .03em; }
+    .floating-phrase-meta { font-size: 10px; letter-spacing: .12em; color: var(--mute); max-height: 0; opacity: 0; overflow: hidden; transition: all .3s; }
+    .floating-phrase:hover .floating-phrase-meta { max-height: 30px; opacity: 1; margin-top: .7rem; }
   </style>
 
   <script>
     (function initPWA() {
       const manifest = {
         name: "hondana - デジタル読書記録", short_name: "hondana", start_url: ".",
-        display: "standalone", background_color: "#f5f1ea", theme_color: "#f5f1ea",
+        display: "standalone", background_color: "#f7f6f3", theme_color: "#f7f6f3",
         icons: [
-          { src: "https://placehold.co/192x192/1c1917/f5f1ea?text=h", sizes: "192x192", type: "image/png" },
-          { src: "https://placehold.co/512x512/1c1917/f5f1ea?text=h", sizes: "512x512", type: "image/png" }
+          { src: "https://placehold.co/192x192/141413/f7f6f3?text=h", sizes: "192x192", type: "image/png" },
+          { src: "https://placehold.co/512x512/141413/f7f6f3?text=h", sizes: "512x512", type: "image/png" }
         ]
       };
       const link = document.createElement('link');
@@ -202,60 +190,67 @@
 <body class="min-h-screen flex flex-col">
 
   <!-- Header -->
-  <header class="bg-[#f5f1ea]/85 backdrop-blur-md border-b border-stone-200/70 sticky top-0 z-30 pt-safe">
-    <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-      <h1 class="text-xl font-bold tracking-tight font-serif-jp">hondana</h1>
-      <div class="flex items-center gap-2 sm:gap-3">
-        <div id="auth-container" class="flex items-center gap-2">
-          <button id="btn-login" class="text-xs font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 px-3 py-1.5 rounded-full transition shadow-sm flex items-center gap-1.5">
-            <i class="ph-fill ph-google-logo"></i><span class="hidden sm:inline">ログイン</span>
-          </button>
-          <div id="user-info" class="hidden items-center gap-2">
-            <img id="user-avatar" src="" alt="" class="w-8 h-8 rounded-full border border-stone-200 object-cover">
-            <button id="btn-logout" class="text-stone-500 hover:text-stone-900 transition" title="ログアウト"><i class="ph ph-sign-out text-lg"></i></button>
+  <header class="sticky top-0 z-30 bg-[#f7f6f3]/90 backdrop-blur-md pt-safe">
+    <div class="max-w-6xl mx-auto px-5 sm:px-10 h-16 sm:h-20 flex items-center justify-between gap-4">
+      <a href="./" class="font-serif-jp text-[17px] tracking-[.28em] font-medium">hondana</a>
+
+      <nav class="hidden md:flex items-center gap-9">
+        <button data-tab="bookshelf" class="tab-btn link-tab">Collection</button>
+        <button data-tab="phrases" class="tab-btn link-tab">Phrases</button>
+        <button data-tab="mapping" class="tab-btn link-tab">Constellation</button>
+        <button data-tab="serendipity" class="tab-btn link-tab">Serendipity</button>
+      </nav>
+
+      <div class="flex items-center gap-4 sm:gap-6">
+        <div id="auth-container" class="flex items-center">
+          <button id="btn-login" class="btn-text">Sign in</button>
+          <div id="user-info" class="hidden items-center gap-3">
+            <img id="user-avatar" src="" alt="" class="w-7 h-7 rounded-full object-cover grayscale">
+            <button id="btn-logout" class="btn-text hidden sm:inline" title="ログアウト">Sign out</button>
           </div>
         </div>
-        <button id="btn-share" class="w-9 h-9 flex items-center justify-center rounded-full text-stone-600 hover:bg-stone-200/60 transition" title="本棚を共有">
-          <i class="ph ph-share-network text-lg"></i>
-        </button>
-        <button id="btn-add-book" class="flex items-center gap-2 bg-stone-900 hover:bg-stone-700 text-white px-4 py-2 rounded-full text-sm font-medium transition shadow-sm">
-          <i class="ph ph-plus-bold"></i><span class="hidden sm:inline">本を追加</span>
-        </button>
+        <button id="btn-share" class="btn-text hidden sm:inline" title="本棚を共有">Share</button>
+        <button id="btn-add-book" class="btn-ink">＋ 本を追加</button>
       </div>
     </div>
+    <!-- モバイル用ナビ -->
+    <nav class="md:hidden flex items-center gap-7 px-5 pb-3 overflow-x-auto no-scrollbar">
+      <button data-tab="bookshelf" class="tab-btn link-tab">Collection</button>
+      <button data-tab="phrases" class="tab-btn link-tab">Phrases</button>
+      <button data-tab="mapping" class="tab-btn link-tab">Constellation</button>
+      <button data-tab="serendipity" class="tab-btn link-tab">Serendipity</button>
+      <button id="btn-share-m" class="link-tab">Share</button>
+    </nav>
   </header>
 
   <!-- 共有閲覧時のバナー -->
-  <div id="portfolio-banner" class="hidden bg-stone-900 text-stone-100 text-xs">
-    <div class="max-w-5xl mx-auto px-4 py-2 flex items-center justify-between gap-3">
-      <span id="portfolio-banner-text" class="flex items-center gap-2"><i class="ph ph-eye"></i>共有された本棚を閲覧しています</span>
-      <a href="./" class="underline underline-offset-2 whitespace-nowrap">自分の本棚へ</a>
+  <div id="portfolio-banner" class="hidden border-y hair">
+    <div class="max-w-6xl mx-auto px-5 sm:px-10 py-3 flex items-center justify-between gap-3">
+      <span id="portfolio-banner-text" class="label">Shared collection — 共有された本棚を閲覧しています</span>
+      <a href="./" class="btn-text">自分の本棚へ →</a>
     </div>
   </div>
 
-  <main class="flex-1 max-w-5xl mx-auto w-full px-4 py-6 flex flex-col">
+  <main class="flex-1 max-w-6xl mx-auto w-full px-5 sm:px-10 pt-8 sm:pt-14 pb-24 flex flex-col">
 
-    <!-- Tabs -->
-    <nav class="flex gap-6 mb-6 border-b border-stone-200 overflow-x-auto no-scrollbar">
-      <button data-tab="bookshelf" class="tab-btn pb-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap transition">Bookshelf</button>
-      <button data-tab="phrases" class="tab-btn pb-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap transition">Phrases</button>
-      <button data-tab="mapping" class="tab-btn pb-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap transition"><i class="ph ph-planet align-middle"></i> Knowledge Map</button>
-      <button data-tab="serendipity" class="tab-btn pb-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap transition"><i class="ph ph-sparkle align-middle"></i> Serendipity</button>
-    </nav>
-
-    <!-- ===== Bookshelf ===== -->
+    <!-- ===== Collection ===== -->
     <section id="view-bookshelf" class="view flex-1 flex flex-col">
-      <div id="stats" class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6"></div>
+      <div class="flex items-end justify-between gap-6 mb-10 sm:mb-14">
+        <div>
+          <p class="label mb-3" id="collection-kicker">Permanent Collection</p>
+          <h2 class="font-serif-jp text-3xl sm:text-[44px] font-light tracking-[.08em] leading-tight">本の収蔵庫</h2>
+        </div>
+        <p id="collection-count" class="label hidden sm:block pb-2"></p>
+      </div>
 
-      <div class="flex flex-col gap-3 mb-5">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div id="status-filters" class="flex bg-stone-200/60 rounded-full p-1 text-sm max-w-full overflow-x-auto no-scrollbar"></div>
-          <div class="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
-            <div class="relative flex-1 sm:flex-none min-w-0">
-              <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"></i>
-              <input id="shelf-search" type="search" placeholder="本棚を検索" class="w-full sm:w-48 bg-white border border-stone-200 rounded-full pl-8 pr-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-stone-300">
-            </div>
-            <select id="shelf-sort" class="w-32 sm:w-auto shrink-0 bg-white border border-stone-200 rounded-full px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-stone-300">
+      <div id="stats" class="mb-14 sm:mb-20"></div>
+
+      <div class="flex flex-col gap-5 mb-12 sm:mb-16 border-b hair pb-5">
+        <div class="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
+          <div id="status-filters" class="flex items-center gap-6 sm:gap-8 overflow-x-auto no-scrollbar"></div>
+          <div class="flex items-end gap-5 w-full sm:w-auto">
+            <input id="shelf-search" type="search" placeholder="Search" class="field flex-1 min-w-0 sm:w-44 !py-1 text-[13px]">
+            <select id="shelf-sort" class="field !w-auto !py-1 text-[12px] tracking-wider pr-4">
               <option value="shelf">読み始め順</option>
               <option value="recent">追加が新しい順</option>
               <option value="finished">読了が新しい順</option>
@@ -263,70 +258,70 @@
               <option value="title">タイトル順</option>
               <option value="rating">評価順</option>
             </select>
-            <div class="flex bg-stone-200/60 rounded-full p-1 shrink-0">
-              <button data-view="spine" class="view-btn w-8 h-8 flex items-center justify-center rounded-full transition" title="背表紙"><i class="ph ph-books text-lg"></i></button>
-              <button data-view="cover" class="view-btn w-8 h-8 flex items-center justify-center rounded-full transition" title="表紙"><i class="ph ph-squares-four text-lg"></i></button>
+            <div class="flex items-center gap-4 shrink-0">
+              <button data-view="gallery" class="view-btn link-tab !pb-1">Gallery</button>
+              <button data-view="archive" class="view-btn link-tab !pb-1">Archive</button>
             </div>
           </div>
         </div>
-        <div id="genre-chips" class="flex items-center gap-2 overflow-x-auto no-scrollbar"></div>
+        <div id="genre-chips" class="flex items-center gap-x-1 gap-y-2 flex-wrap text-xs"></div>
       </div>
 
-      <div id="bookshelf-container" class="pb-16"></div>
-      <div id="empty-state" class="hidden flex-col items-center justify-center py-20 text-center">
-        <i class="ph ph-books text-5xl text-stone-300 mb-4"></i>
-        <h2 id="empty-title" class="text-lg font-medium mb-2 font-serif-jp">本棚は空です</h2>
-        <p id="empty-text" class="text-sm text-stone-500 max-w-md font-serif-jp leading-relaxed">右上の「本を追加」から、<br>あなたの本棚を作り始めましょう。</p>
+      <div id="bookshelf-container" class="pt-6"></div>
+      <div id="empty-state" class="hidden flex-col items-center justify-center py-28 text-center">
+        <p class="label mb-5">Empty Room</p>
+        <h3 id="empty-title" class="font-serif-jp text-xl font-light tracking-wider mb-3">まだ展示がありません</h3>
+        <p id="empty-text" class="text-sm text-mute font-serif-jp leading-loose">「本を追加」から、最初の一冊を収蔵しましょう。</p>
       </div>
     </section>
 
     <!-- ===== Phrases ===== -->
-    <section id="view-phrases" class="view hidden flex-1 flex-col pb-20">
-      <div id="phrase-form-container" class="mb-6 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-stone-200/70">
-        <h3 id="phrase-form-title" class="text-sm font-bold mb-4 flex items-center gap-2"><i class="ph-fill ph-quotes text-lg text-amber-700"></i> 新しいフレーズを記録</h3>
-        <form id="phrase-form" class="flex flex-col gap-3">
-          <div class="flex flex-col sm:flex-row gap-3">
-            <select id="phrase-book-select" class="flex-1 bg-stone-50 rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-stone-200"></select>
-            <input type="number" id="phrase-page" min="1" placeholder="ページ" class="w-full sm:w-28 bg-stone-50 rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-stone-200">
-          </div>
-          <textarea id="phrase-text" placeholder="心に残ったフレーズや引用を入力..." class="w-full bg-stone-50 rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-stone-200 resize-none font-serif-jp h-24 leading-relaxed"></textarea>
-          <div class="flex justify-end gap-2">
-            <button type="button" id="btn-cancel-phrase" class="hidden px-4 py-2.5 rounded-lg text-sm text-stone-500 hover:bg-stone-100 transition">キャンセル</button>
-            <button type="submit" id="btn-add-phrase" class="bg-stone-900 hover:bg-stone-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition flex items-center gap-2">
-              <i class="ph ph-plus-bold"></i><span>記録する</span>
-            </button>
+    <section id="view-phrases" class="view hidden flex-1 flex-col">
+      <div class="mb-10 sm:mb-14">
+        <p class="label mb-3">Fragments</p>
+        <h2 class="font-serif-jp text-3xl sm:text-[44px] font-light tracking-[.08em] leading-tight">言葉の断片</h2>
+      </div>
+
+      <div id="phrase-form-container" class="mb-16 max-w-3xl">
+        <p id="phrase-form-title" class="label mb-5">New Fragment</p>
+        <form id="phrase-form" class="flex flex-col gap-6">
+          <textarea id="phrase-text" placeholder="心に残ったフレーズや引用を…" class="field font-serif-jp resize-none h-28 text-[15px]"></textarea>
+          <div class="flex flex-col sm:flex-row sm:items-end gap-5">
+            <select id="phrase-book-select" class="field flex-1 text-[13px]"></select>
+            <input type="number" id="phrase-page" min="1" placeholder="Page" class="field sm:!w-24 text-[13px]">
+            <div class="flex items-center gap-5 shrink-0">
+              <button type="button" id="btn-cancel-phrase" class="hidden btn-text">Cancel</button>
+              <button type="submit" id="btn-add-phrase" class="btn-ink"><span>記録する</span></button>
+            </div>
           </div>
         </form>
       </div>
 
-      <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
-        <div id="phrase-chips" class="flex items-center gap-2 overflow-x-auto no-scrollbar flex-1"></div>
-        <div class="relative">
-          <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"></i>
-          <input id="phrase-search" type="search" placeholder="フレーズを検索" class="w-full sm:w-52 bg-white border border-stone-200 rounded-full pl-8 pr-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-stone-300">
-        </div>
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-5 mb-4 border-b hair pb-5">
+        <div id="phrase-chips" class="flex items-center gap-x-1 gap-y-2 flex-wrap text-xs"></div>
+        <input id="phrase-search" type="search" placeholder="Search" class="field sm:!w-52 !py-1 text-[13px]">
       </div>
-      <div id="phrases-list" class="columns-1 md:columns-2 gap-5"></div>
-      <div id="phrases-empty" class="hidden flex-col items-center justify-center py-16 text-center">
-        <i class="ph ph-quotes text-4xl text-stone-300 mb-3"></i>
-        <p id="phrases-empty-msg" class="text-sm text-stone-500 font-serif-jp">まだフレーズが記録されていません。</p>
+      <div id="phrases-list" class="max-w-3xl"></div>
+      <div id="phrases-empty" class="hidden flex-col items-center justify-center py-24 text-center">
+        <p class="label mb-4">No Fragments</p>
+        <p id="phrases-empty-msg" class="text-sm text-mute font-serif-jp">まだフレーズが記録されていません。</p>
       </div>
     </section>
 
-    <!-- ===== Knowledge Map ===== -->
-    <section id="view-mapping" class="view hidden flex-1 flex-col h-[calc(100vh-200px)] min-h-[500px]">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
-        <p id="map-hint" class="text-sm text-stone-500">本と本を線で結び、あなただけの「思考の星座」を描きましょう。</p>
-        <div class="flex items-center gap-2 ml-auto">
-          <button id="btn-export-map" class="text-sm font-medium px-4 py-2 rounded-full bg-white border border-stone-200 hover:bg-stone-50 transition flex items-center gap-1.5">
-            <i class="ph ph-download-simple text-lg"></i><span class="hidden sm:inline">画像保存</span>
-          </button>
-          <button id="btn-connect-mode" class="text-sm font-medium px-4 py-2 rounded-full bg-slate-800 text-white hover:bg-slate-700 transition flex items-center gap-2">
-            <i class="ph ph-git-merge text-lg"></i><span>Connect: OFF</span>
-          </button>
+    <!-- ===== Constellation ===== -->
+    <section id="view-mapping" class="view hidden flex-1 flex-col">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-5 mb-8">
+        <div>
+          <p class="label mb-3">Constellation</p>
+          <h2 class="font-serif-jp text-3xl sm:text-[44px] font-light tracking-[.08em] leading-tight">思考の星座</h2>
+          <p id="map-hint" class="text-xs text-mute mt-4 leading-relaxed">本と本を線で結び、あなただけの星座を描きましょう。</p>
+        </div>
+        <div class="flex items-center gap-6">
+          <button id="btn-export-map" class="btn-text">Export</button>
+          <button id="btn-connect-mode" class="link-tab">Connect — Off</button>
         </div>
       </div>
-      <div id="map-container" class="relative flex-1 bg-space rounded-2xl overflow-auto shadow-inner cursor-grab">
+      <div id="map-container" class="relative bg-chart overflow-auto cursor-grab border hair h-[calc(100vh-280px)] min-h-[460px]">
         <div id="map-content" class="relative min-w-[1000px] min-h-[600px]">
           <div id="map-grid" class="absolute inset-0 pointer-events-none"></div>
           <svg id="map-svg" class="absolute inset-0 w-full h-full"></svg>
@@ -336,131 +331,125 @@
     </section>
 
     <!-- ===== Serendipity ===== -->
-    <section id="view-serendipity" class="view hidden flex-1 flex-col h-[calc(100vh-200px)] min-h-[500px] relative overflow-hidden bg-serendipity rounded-2xl border border-stone-200/70 shadow-inner">
-      <canvas id="serendipity-canvas" class="absolute inset-0 w-full h-full z-0 pointer-events-none"></canvas>
-      <div id="serendipity-container" class="absolute inset-0 w-full h-full z-10"></div>
-      <div id="serendipity-empty" class="hidden absolute inset-0 flex-col items-center justify-center text-center z-20">
-        <i class="ph ph-sparkle text-4xl text-stone-300 mb-3"></i>
-        <p class="text-sm text-stone-500 font-serif-jp mb-2">まだフレーズが記録されていません。</p>
-        <p class="text-xs text-stone-400">フレーズを追加して、インスピレーションの海を漂わせましょう。</p>
+    <section id="view-serendipity" class="view hidden flex-1 flex-col">
+      <div class="flex items-end justify-between gap-5 mb-8">
+        <div>
+          <p class="label mb-3">Serendipity</p>
+          <h2 class="font-serif-jp text-3xl sm:text-[44px] font-light tracking-[.08em] leading-tight">偶然の出会い</h2>
+        </div>
+        <button id="btn-shuffle" class="btn-text pb-2">Shuffle</button>
       </div>
-      <div class="absolute bottom-4 right-4 z-30 flex items-center gap-2">
-        <button id="btn-shuffle" class="text-xs font-medium text-stone-700 bg-white/85 hover:bg-white px-3 py-1.5 rounded-full backdrop-blur border border-stone-200 shadow-sm flex items-center gap-1.5 transition">
-          <i class="ph ph-shuffle"></i> シャッフル
-        </button>
+      <div class="relative overflow-hidden border hair bg-[#f1efea] h-[calc(100vh-280px)] min-h-[460px]">
+        <canvas id="serendipity-canvas" class="absolute inset-0 w-full h-full z-0 pointer-events-none"></canvas>
+        <div id="serendipity-container" class="absolute inset-0 w-full h-full z-10"></div>
+        <div id="serendipity-empty" class="hidden absolute inset-0 flex-col items-center justify-center text-center z-20">
+          <p class="label mb-4">Quiet Room</p>
+          <p class="text-sm text-mute font-serif-jp">フレーズを記録すると、ここに言葉が漂います。</p>
+        </div>
       </div>
     </section>
   </main>
 
+  <footer class="max-w-6xl mx-auto w-full px-5 sm:px-10">
+    <div class="py-10 border-t hair flex justify-between">
+      <span class="label">hondana</span>
+      <span class="label">A private museum of books</span>
+    </div>
+  </footer>
+
   <!-- ===== Book Modal ===== -->
-  <div id="modal" class="fixed inset-0 z-50 hidden justify-center items-start sm:items-center bg-stone-900/40 backdrop-blur-sm overflow-y-auto sm:p-6">
-    <div id="modal-panel" class="modal-panel bg-white w-full sm:max-w-3xl sm:rounded-2xl shadow-2xl relative min-h-screen sm:min-h-0 my-auto">
-      <button id="btn-close-modal" class="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-stone-100 text-stone-500 hover:bg-stone-200 transition z-10" aria-label="閉じる">
-        <i class="ph ph-x text-lg"></i>
-      </button>
+  <div id="modal" class="fixed inset-0 z-50 hidden justify-center items-start sm:items-center bg-[#141413]/30 backdrop-blur-[2px] overflow-y-auto sm:p-8">
+    <div id="modal-panel" class="modal-panel bg-[#f7f6f3] w-full sm:max-w-4xl relative min-h-screen sm:min-h-0 my-auto shadow-[0_40px_80px_-40px_rgba(0,0,0,.5)]">
+      <button id="btn-close-modal" class="absolute top-5 right-5 btn-text z-10" aria-label="閉じる">Close ✕</button>
 
-      <div class="grid md:grid-cols-[250px_1fr]">
-        <!-- 左 -->
-        <aside class="bg-stone-50 p-6 pt-10 flex flex-col items-center gap-4 md:border-r border-stone-100 sm:rounded-tl-2xl md:rounded-bl-2xl">
-          <div id="detail-cover" class="w-36 md:w-44"></div>
-
-          <div id="cover-tools" class="w-full">
-            <button id="btn-cover-toggle" class="w-full text-xs text-stone-500 hover:text-stone-900 flex items-center justify-center gap-1.5 py-1 transition">
-              <i class="ph ph-image"></i> 表紙を変更
-            </button>
-            <div id="cover-edit" class="hidden mt-2 space-y-2">
-              <input type="text" id="detail-cover-url" placeholder="画像URLを貼り付け" class="w-full bg-white border border-stone-200 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-stone-200">
-              <div class="flex gap-2">
-                <label class="flex-1 cursor-pointer text-center text-xs bg-white border border-stone-200 hover:bg-stone-100 rounded-lg py-2 transition">
-                  <i class="ph ph-upload-simple"></i> 写真から選ぶ
-                  <input type="file" id="detail-cover-file" accept="image/*" class="hidden">
+      <div class="grid md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+        <!-- 左:展示台 -->
+        <aside class="bg-[#efede8] px-10 pt-16 pb-10 md:py-16 flex flex-col items-center gap-6">
+          <div id="detail-cover" class="w-40 md:w-52"></div>
+          <div id="cover-tools" class="w-full max-w-[240px]">
+            <button id="btn-cover-toggle" class="btn-text w-full text-center">Change cover</button>
+            <div id="cover-edit" class="hidden mt-4 space-y-4">
+              <input type="text" id="detail-cover-url" placeholder="画像URLを貼り付け" class="field text-xs">
+              <div class="flex items-center justify-between gap-3">
+                <label class="btn-text cursor-pointer">
+                  写真から選ぶ<input type="file" id="detail-cover-file" accept="image/*" class="hidden">
                 </label>
-                <button id="btn-cover-clear" class="text-xs text-stone-500 hover:text-red-600 px-2 transition">外す</button>
+                <button id="btn-cover-clear" class="btn-text">外す</button>
               </div>
-              <p class="text-[10px] text-stone-400 leading-relaxed">表紙がないときは、タイトルから自動で装丁を作ります。</p>
-            </div>
-          </div>
-
-          <div class="w-full">
-            <label class="block text-xs font-medium text-stone-400 mb-1.5">ステータス</label>
-            <div id="status-seg" class="grid grid-cols-3 bg-stone-200/60 rounded-lg p-1 text-xs font-medium">
-              <button data-status="wish" class="py-1.5 rounded-md transition">読みたい</button>
-              <button data-status="reading" class="py-1.5 rounded-md transition">読書中</button>
-              <button data-status="read" class="py-1.5 rounded-md transition">読了</button>
-            </div>
-          </div>
-
-          <div id="progress-block" class="w-full hidden">
-            <div class="flex items-center justify-between mb-1">
-              <label class="text-xs font-medium text-stone-400">進み具合</label>
-              <span id="progress-label" class="text-xs font-medium text-stone-600"></span>
-            </div>
-            <input type="range" id="detail-current-range" min="0" max="250" value="0" class="w-full">
-            <div class="flex items-center gap-2 mt-1">
-              <input type="number" id="detail-current" min="0" class="w-20 bg-white border border-stone-200 rounded-lg p-1.5 text-xs outline-none">
-              <span class="text-xs text-stone-400">ページまで読んだ</span>
+              <p class="text-[10px] text-mute leading-relaxed">表紙がないときは、タイトルから装丁を自動で作ります。</p>
             </div>
           </div>
         </aside>
 
-        <!-- 右 -->
-        <section class="p-6 flex flex-col gap-4">
-          <div class="pr-10">
-            <input type="text" id="detail-title" placeholder="タイトル" autocomplete="off" class="w-full bg-transparent text-xl font-bold font-serif-jp outline-none border-b border-transparent focus:border-stone-300 pb-1 placeholder:text-stone-300">
-            <input type="text" id="detail-author" placeholder="著者名" autocomplete="off" class="w-full bg-transparent text-sm text-stone-600 outline-none border-b border-transparent focus:border-stone-300 pb-1 mt-1 placeholder:text-stone-300">
+        <!-- 右:キャプション -->
+        <section class="px-7 sm:px-10 py-10 md:py-14 flex flex-col gap-7">
+          <div class="pr-16">
+            <p id="detail-no" class="label mb-4">New Acquisition</p>
+            <input type="text" id="detail-title" placeholder="タイトル" autocomplete="off" class="w-full bg-transparent text-2xl sm:text-[28px] font-light font-serif-jp tracking-[.04em] outline-none placeholder:text-[#c9c6bf] leading-snug">
+            <input type="text" id="detail-author" placeholder="著者名" autocomplete="off" class="w-full bg-transparent text-sm text-mute outline-none mt-2 tracking-wider placeholder:text-[#c9c6bf]">
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-medium text-stone-400 mb-1">読み始めた日</label>
-              <input type="date" id="detail-start" class="w-full bg-stone-50 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-stone-200">
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-stone-400 mb-1">読み終えた日</label>
-              <input type="date" id="detail-end" class="w-full bg-stone-50 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-stone-200">
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-stone-400 mb-1">ジャンル</label>
-              <input type="text" id="detail-genre" list="genre-list" placeholder="小説, 建築, 哲学..." class="w-full bg-stone-50 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-stone-200">
-              <datalist id="genre-list"></datalist>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-stone-400 mb-1">総ページ数</label>
-              <input type="number" id="detail-pages" min="1" placeholder="250" class="w-full bg-stone-50 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-stone-200">
+          <div>
+            <p class="label mb-3">Status</p>
+            <div id="status-seg" class="flex items-center gap-7">
+              <button data-status="wish" class="link-tab">読みたい</button>
+              <button data-status="reading" class="link-tab">読書中</button>
+              <button data-status="read" class="link-tab">読了</button>
             </div>
           </div>
 
-          <div class="flex items-center justify-between pt-3 border-t border-stone-100">
-            <label class="text-xs font-medium text-stone-400">評価と感想</label>
-            <div id="detail-stars" class="flex items-center gap-1 text-xl"></div>
-          </div>
-          <textarea id="detail-memo" placeholder="感想やメモを記録..." class="w-full bg-stone-50 rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-stone-200 resize-none font-serif-jp min-h-[130px] leading-relaxed"></textarea>
-
-          <div id="detail-phrases-wrap" class="pt-3 border-t border-stone-100">
-            <div class="flex items-center justify-between mb-2">
-              <label class="text-xs font-medium text-stone-400 flex items-center gap-1"><i class="ph-fill ph-quotes text-amber-700"></i> この本のフレーズ</label>
-              <span id="detail-phrases-count" class="text-xs text-stone-400"></span>
+          <div id="progress-block" class="hidden">
+            <div class="flex items-center justify-between mb-3">
+              <p class="label">Progress</p>
+              <span id="progress-label" class="text-xs tabular-nums"></span>
             </div>
-            <div id="detail-phrases" class="flex flex-col gap-2 max-h-48 overflow-y-auto mb-2"></div>
-            <div id="detail-phrase-add" class="flex gap-2">
-              <input type="text" id="detail-phrase-text" placeholder="フレーズをすばやく追加" class="flex-1 bg-stone-50 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-stone-200 font-serif-jp">
-              <input type="number" id="detail-phrase-page" placeholder="p." class="w-16 bg-stone-50 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-stone-200">
-              <button id="btn-detail-phrase" class="px-3 rounded-lg bg-stone-100 hover:bg-stone-200 transition" title="追加"><i class="ph ph-plus"></i></button>
+            <input type="range" id="detail-current-range" min="0" max="250" value="0" class="w-full">
+            <div class="flex items-center gap-3 mt-2">
+              <input type="number" id="detail-current" min="0" class="field !w-16 text-xs !py-1">
+              <span class="text-xs text-mute">ページまで読んだ</span>
             </div>
           </div>
 
-          <div id="detail-actions" class="flex gap-3 pt-4 border-t border-stone-100 mt-auto">
-            <button id="btn-delete-book" class="px-4 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition">削除</button>
+          <div class="grid grid-cols-2 gap-x-8 gap-y-6">
+            <div><p class="label">Started</p><input type="date" id="detail-start" class="field text-[13px]"></div>
+            <div><p class="label">Finished</p><input type="date" id="detail-end" class="field text-[13px]"></div>
+            <div><p class="label">Genre</p><input type="text" id="detail-genre" list="genre-list" placeholder="建築, 小説…" class="field text-[13px]"><datalist id="genre-list"></datalist></div>
+            <div><p class="label">Pages</p><input type="number" id="detail-pages" min="1" placeholder="250" class="field text-[13px]"></div>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <p class="label">Notes</p>
+              <div id="detail-stars" class="flex items-center gap-1.5"></div>
+            </div>
+            <textarea id="detail-memo" placeholder="感想やメモを記録…" class="field font-serif-jp resize-none min-h-[140px] text-[14px]"></textarea>
+          </div>
+
+          <div id="detail-phrases-wrap">
+            <div class="flex items-center justify-between mb-3">
+              <p class="label">Fragments</p>
+              <span id="detail-phrases-count" class="label"></span>
+            </div>
+            <div id="detail-phrases" class="flex flex-col gap-4 max-h-52 overflow-y-auto mb-4"></div>
+            <div id="detail-phrase-add" class="flex items-end gap-4">
+              <input type="text" id="detail-phrase-text" placeholder="フレーズをすばやく追加" class="field flex-1 min-w-0 font-serif-jp text-[13px]">
+              <input type="number" id="detail-phrase-page" placeholder="p." class="field !w-14 text-[13px]">
+              <button id="btn-detail-phrase" class="btn-text pb-2">Add</button>
+            </div>
+          </div>
+
+          <div id="detail-actions" class="flex items-center gap-6 pt-6 border-t hair mt-auto">
+            <button id="btn-delete-book" class="btn-text hover:!text-red-700">Delete</button>
             <div class="flex-1"></div>
-            <button id="btn-cancel-book" class="px-4 py-2 rounded-lg text-sm text-stone-500 hover:bg-stone-100 transition">キャンセル</button>
-            <button id="btn-save-book" class="px-6 py-2 rounded-lg bg-stone-900 hover:bg-stone-700 text-white text-sm font-medium transition">保存</button>
+            <button id="btn-cancel-book" class="btn-text">Cancel</button>
+            <button id="btn-save-book" class="btn-ink">保存</button>
           </div>
         </section>
       </div>
     </div>
   </div>
 
-  <div id="toast-container" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] flex flex-col items-center gap-2 pointer-events-none"></div>
+  <div id="toast-container" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[60] flex flex-col items-center gap-2 pointer-events-none"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -489,14 +478,15 @@
     const genreOf = (b) => (b && b.genre && String(b.genre).trim()) ? String(b.genre).trim() : '未分類';
     const clean = (obj) => JSON.parse(JSON.stringify(obj));
     const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+    const pct = (b) => b.pages ? clamp(Math.round((b.currentPage || 0) / b.pages * 100), 0, 100) : 0;
 
-    // 布装の本をイメージした色
+    // 落ち着いた紙・布の色(ミニマルな展示向け)
     const PALETTE = [
-      { bg: '#2f3e46', fg: '#f1ece2' }, { bg: '#7b2d26', fg: '#f6e9d8' }, { bg: '#3d5a40', fg: '#eef0e2' },
-      { bg: '#d8ccb4', fg: '#2b2620' }, { bg: '#1f2a44', fg: '#e9e4d6' }, { bg: '#9c6b30', fg: '#fbf3e4' },
-      { bg: '#5b4b6b', fg: '#f0eaf4' }, { bg: '#e9e2d3', fg: '#3a3128' }, { bg: '#b5523b', fg: '#fff4ea' },
-      { bg: '#365b6d', fg: '#eaf1f3' }, { bg: '#c9a227', fg: '#2a2410' }, { bg: '#4a4a48', fg: '#eeeae2' },
-      { bg: '#a3b18a', fg: '#26301e' }, { bg: '#f2efe9', fg: '#2b2b2b' }, { bg: '#6d2e46', fg: '#f7e8ee' }
+      { bg: '#ebe8e1', fg: '#2a2925' }, { bg: '#dcd8ce', fg: '#2a2925' }, { bg: '#2a2a28', fg: '#ecebe6' },
+      { bg: '#4b504c', fg: '#eeede8' }, { bg: '#8a8477', fg: '#f6f4ef' }, { bg: '#bdb6a7', fg: '#262520' },
+      { bg: '#5f6871', fg: '#eef0f2' }, { bg: '#a69a83', fg: '#fbf8f2' }, { bg: '#3f3b37', fg: '#ece7df' },
+      { bg: '#f3f1ec', fg: '#2b2b2b' }, { bg: '#726c62', fg: '#f4f1ea' }, { bg: '#1e2023', fg: '#e8e6e0' },
+      { bg: '#8f6f5a', fg: '#f7efe7' }, { bg: '#6f7a6a', fg: '#f1f3ee' }
     ];
     const colorFor = (b) => PALETTE[hashStr((b.title || '') + '|' + (b.author || '')) % PALETTE.length];
 
@@ -505,23 +495,18 @@
       const img = b.coverUrl ? `<img src="${esc(b.coverUrl)}" alt="" loading="lazy" onerror="this.remove()">` : '';
       return `<div class="cover ${extraClass}">
         <div class="gen-cover" style="background:${c.bg};color:${c.fg}">
-          <div><div class="gc-title">${esc(b.title || '無題')}</div><div class="gc-rule"></div></div>
-          <div class="gc-author">${esc(b.author || '')}</div>
+          <div class="gc-title">${esc(b.title || '無題')}</div>
+          <div><div class="gc-mark"></div><div class="gc-author">${esc(b.author || '')}</div></div>
         </div>${img}</div>`;
     }
 
     function showToast(message, type = 'success') {
-      const icons = {
-        success: '<i class="ph-fill ph-check-circle text-green-600 text-lg"></i>',
-        error: '<i class="ph-fill ph-warning-circle text-red-500 text-lg"></i>',
-        info: '<i class="ph-fill ph-info text-stone-500 text-lg"></i>'
-      };
       const el = document.createElement('div');
-      el.className = 'toast flex items-center gap-2 bg-white px-4 py-3 rounded-xl shadow-lg border border-stone-100 text-sm font-medium';
-      el.innerHTML = `${icons[type] || icons.info}<span>${esc(message)}</span>`;
+      el.className = `toast px-5 py-3 text-xs tracking-wider ${type === 'error' ? 'bg-[#7a2a22] text-white' : 'bg-[#141413] text-[#f7f6f3]'}`;
+      el.textContent = message;
       $('toast-container').appendChild(el);
       requestAnimationFrame(() => el.classList.add('show'));
-      setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, 2800);
+      setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 350); }, 2600);
     }
 
     // 画像を表紙サイズに縮小して dataURL にする(Firestoreの容量対策)
@@ -556,7 +541,7 @@
     const state = {
       books: [], links: [], phrases: [],
       filter: 'all', genre: 'all', query: '', sort: safeLS.get('hondana_sort', 'shelf'),
-      viewMode: safeLS.get('hondana_view', 'spine'),
+      viewMode: safeLS.get('hondana_view2', 'gallery'),
       phrasesGenre: 'all', phrasesQuery: '',
       activeTab: 'bookshelf',
       isPortfolioMode: false, portfolioOwner: '',
@@ -597,9 +582,10 @@
 
     function enterPortfolioMode() {
       state.isPortfolioMode = true;
-      ['btn-add-book', 'btn-share', 'auth-container', 'phrase-form-container', 'btn-connect-mode'].forEach(id => $(id).classList.add('hidden'));
+      ['btn-add-book', 'btn-share', 'btn-share-m', 'auth-container', 'phrase-form-container', 'btn-connect-mode'].forEach(id => $(id).classList.add('hidden'));
       $('portfolio-banner').classList.remove('hidden');
-      $('map-hint').textContent = '本と本のつながりを星座として眺められます。';
+      $('collection-kicker').textContent = 'Shared Collection';
+      $('map-hint').textContent = '本と本のつながりを、星座として眺められます。';
     }
 
     async function loadPortfolio(id) {
@@ -612,7 +598,7 @@
         state.phrases = data.phrases || [];
         state.portfolioOwner = data.ownerName || '';
         if (state.portfolioOwner) {
-          $('portfolio-banner-text').innerHTML = `<i class="ph ph-eye"></i>${esc(state.portfolioOwner)} さんの本棚を閲覧しています`;
+          $('portfolio-banner-text').textContent = `Shared collection — ${state.portfolioOwner} さんの本棚`;
         }
       } catch (e) {
         console.error(e);
@@ -630,23 +616,24 @@
       }
     });
 
-    $('btn-logout').addEventListener('click', async () => {
+    async function doLogout() {
       if (!confirm('ログアウトしますか？')) return;
       try {
         await signOut(auth);
         location.reload();
       } catch { showToast('ログアウトに失敗しました', 'error'); }
-    });
+    }
+    $('btn-logout').addEventListener('click', doLogout);
+    $('user-avatar').addEventListener('click', doLogout);
 
     function updateAuthUI(user) {
       $('btn-login').classList.toggle('hidden', !!user);
-      $('btn-login').classList.toggle('flex', !user);
       $('user-info').classList.toggle('hidden', !user);
       $('user-info').classList.toggle('flex', !!user);
       if (user) {
         const initial = user.displayName ? encodeURIComponent(user.displayName.charAt(0)) : 'U';
-        $('user-avatar').src = user.photoURL || `https://placehold.co/100x100/e7e5e4/57534e?text=${initial}`;
-        $('user-avatar').title = user.displayName || 'ユーザー';
+        $('user-avatar').src = user.photoURL || `https://placehold.co/100x100/e3e1db/8c8a84?text=${initial}`;
+        $('user-avatar').title = (user.displayName || 'ユーザー') + '(タップでログアウト)';
       }
     }
 
@@ -673,7 +660,7 @@
       const localLinks = safeLS.get('hondana_links', []);
       const localPhrases = safeLS.get('hondana_phrases', []);
       if (!localBooks.length && !localPhrases.length && !localLinks.length) return;
-      showToast('この端末のデータをアカウントに同期しています...', 'info');
+      showToast('この端末のデータをアカウントに同期しています…', 'info');
       try {
         const uid = currentUser.uid;
         const cloudIds = new Set((await getDocs(collection(db, 'users', uid, 'books'))).docs.map(d => d.id));
@@ -746,13 +733,19 @@
       else if (state.activeTab === 'serendipity') initSerendipityView();
     }
 
-    /* ================= 読書の記録(統計) ================= */
+    // 収蔵番号(追加した順の通し番号)
+    function accessionMap() {
+      return new Map([...state.books].sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0)).map((b, i) => [b.id, i + 1]));
+    }
+    const noStr = (n) => `No. ${String(n).padStart(3, '0')}`;
+
+    /* ================= 統計(展示の導入) ================= */
     const finishDate = (b) => b.endDate ? new Date(b.endDate) : new Date(b.addedAt || Date.now());
 
     function renderStats() {
       const el = $('stats');
-      if (!state.books.length) { el.innerHTML = ''; el.classList.add('hidden'); return; }
-      el.classList.remove('hidden');
+      $('collection-count').textContent = state.books.length ? `${state.books.length} works` : '';
+      if (!state.books.length) { el.innerHTML = ''; return; }
       const now = new Date();
       const y = now.getFullYear();
       const readThisYear = state.books.filter(b => b.status === 'read' && finishDate(b).getFullYear() === y);
@@ -763,42 +756,47 @@
       const reading = state.books.filter(b => b.status === 'reading');
 
       const bars = months.map((n, i) => `
-        <div class="flex-1 flex flex-col items-center gap-1" title="${i + 1}月: ${n}冊">
-          <div class="w-full flex items-end h-14">
-            <div class="w-full rounded-sm ${i === now.getMonth() ? 'bg-stone-900' : 'bg-stone-300'}" style="height:${n ? Math.max(8, n / max * 100) : 3}%"></div>
+        <div class="flex-1 flex flex-col items-center gap-2" title="${i + 1}月: ${n}冊">
+          <div class="w-full flex justify-center items-end h-16">
+            <div class="w-px ${i === now.getMonth() ? 'bg-[#141413]' : 'bg-[#bdbab3]'}" style="height:${n ? Math.max(12, n / max * 100) : 4}%"></div>
           </div>
-          <span class="text-[9px] ${i === now.getMonth() ? 'text-stone-900 font-semibold' : 'text-stone-400'}">${i + 1}</span>
+          <span class="text-[9px] tabular-nums ${i === now.getMonth() ? '' : 'text-mute'}">${i + 1}</span>
         </div>`).join('');
 
-      const readingHtml = reading.length ? reading.slice(0, 3).map(b => {
-        const pct = b.pages ? clamp(Math.round((b.currentPage || 0) / b.pages * 100), 0, 100) : 0;
-        return `<button data-open="${esc(b.id)}" class="flex items-center gap-3 w-full text-left hover:bg-stone-50 rounded-lg p-1 -m-1 transition">
-          <div class="w-7 shrink-0">${coverHtml(b)}</div>
-          <div class="min-w-0 flex-1">
-            <div class="text-xs font-semibold truncate font-serif-jp">${esc(b.title)}</div>
-            <div class="h-1 bg-stone-200 rounded-full mt-1.5 overflow-hidden"><div class="h-full bg-stone-800" style="width:${pct}%"></div></div>
+      const readingHtml = reading.length ? reading.slice(0, 3).map(b => `
+        <button data-open="${esc(b.id)}" class="block w-full text-left group">
+          <div class="flex items-baseline justify-between gap-3">
+            <span class="font-serif-jp text-[13px] truncate group-hover:underline underline-offset-4">${esc(b.title)}</span>
+            <span class="text-[10px] text-mute tabular-nums">${pct(b)}%</span>
           </div>
-          <span class="text-[10px] text-stone-500 tabular-nums">${pct}%</span>
-        </button>`;
-      }).join('') : '<p class="text-xs text-stone-400 font-serif-jp">いま読んでいる本はありません</p>';
+          <div class="progress-hair"><i style="width:${pct(b)}%"></i></div>
+        </button>`).join('') : '<p class="text-xs text-mute font-serif-jp">いま読んでいる本はありません</p>';
 
+      const cell = 'py-7 md:py-8 md:px-8 md:first:pl-0 md:last:pr-0';
       el.innerHTML = `
-        <div class="bg-white rounded-2xl border border-stone-200/70 p-4 flex flex-col justify-between">
-          <span class="text-xs text-stone-400">${y}年に読んだ本</span>
-          <div class="flex items-baseline gap-1 mt-1"><span class="text-4xl font-bold tabular-nums font-serif-jp">${readThisYear.length}</span><span class="text-sm text-stone-500">冊</span></div>
-          <span class="text-xs text-stone-500 mt-1">${pages.toLocaleString()} ページ / 本棚に ${state.books.length} 冊</span>
-        </div>
-        <div class="bg-white rounded-2xl border border-stone-200/70 p-4 col-span-2 md:col-span-1 order-last md:order-none">
-          <span class="text-xs text-stone-400">月ごとの読了</span>
-          <div class="flex gap-1 mt-2">${bars}</div>
-        </div>
-        <div class="bg-white rounded-2xl border border-stone-200/70 p-4 flex flex-col gap-2.5">
-          <span class="text-xs text-stone-400">読書中 ${reading.length ? `(${reading.length})` : ''}</span>
-          ${readingHtml}
+        <div class="grid grid-cols-2 md:grid-cols-4 border-y hair md:divide-x divide-[#e3e1db]">
+          <div class="${cell}">
+            <p class="label">Read in ${y}</p>
+            <p class="font-serif-jp text-5xl font-light mt-4 tabular-nums">${readThisYear.length}</p>
+            <p class="text-[11px] text-mute mt-2 tracking-wider">works</p>
+          </div>
+          <div class="${cell}">
+            <p class="label">Pages</p>
+            <p class="font-serif-jp text-5xl font-light mt-4 tabular-nums">${pages.toLocaleString()}</p>
+            <p class="text-[11px] text-mute mt-2 tracking-wider">pages read</p>
+          </div>
+          <div class="${cell} col-span-2 md:col-span-1 border-t md:border-t-0 hair">
+            <p class="label mb-5">Now Reading</p>
+            <div class="flex flex-col gap-4">${readingHtml}</div>
+          </div>
+          <div class="${cell} col-span-2 md:col-span-1 border-t md:border-t-0 hair">
+            <p class="label mb-3">Timeline ${y}</p>
+            <div class="flex">${bars}</div>
+          </div>
         </div>`;
     }
 
-    /* ================= 本棚 ================= */
+    /* ================= コレクション ================= */
     function filteredBooks() {
       let list = state.books.slice();
       if (state.filter !== 'all') list = list.filter(b => b.status === state.filter);
@@ -818,42 +816,41 @@
       return list;
     }
 
+    function genreLinks(counts, active, attr, allLabel) {
+      const keys = Object.keys(counts).sort((a, b) => a.localeCompare(b, 'ja'));
+      if (keys.length < 2) return '';
+      const item = (val, label, n) => `<button ${attr}="${esc(val)}" class="px-1 py-0.5 tracking-wider transition ${active === val ? 'text-[#141413] underline underline-offset-[6px] decoration-1' : 'text-mute hover:text-[#141413]'}">${esc(label)}${n !== undefined ? `<sup class="ml-0.5 text-[9px]">${n}</sup>` : ''}</button>`;
+      return [item('all', allLabel), ...keys.map(k => item(k, k, counts[k]))].join('<span class="text-[#d4d1ca] px-1">/</span>');
+    }
+
     function renderFilters() {
       const counts = { all: state.books.length, read: 0, reading: 0, wish: 0 };
       state.books.forEach(b => { if (counts[b.status] !== undefined) counts[b.status]++; });
-      const labels = [['all', 'すべて'], ['read', '読了'], ['reading', '読書中'], ['wish', '読みたい']];
-      $('status-filters').innerHTML = labels.map(([k, l]) => `
-        <button data-filter="${k}" class="px-3 py-1 rounded-full transition whitespace-nowrap ${state.filter === k ? 'bg-white shadow-sm text-stone-900 font-medium' : 'text-stone-500 hover:text-stone-900'}">
-          ${l}<span class="ml-1 text-[11px] text-stone-400 tabular-nums">${counts[k]}</span>
-        </button>`).join('');
+      const labels = [['all', 'All'], ['read', 'Read'], ['reading', 'Reading'], ['wish', 'Wish']];
+      $('status-filters').innerHTML = labels.map(([k, l]) =>
+        `<button data-filter="${k}" class="link-tab ${state.filter === k ? 'active' : ''}">${l}<span class="n">${counts[k]}</span></button>`).join('');
 
       const base = state.filter === 'all' ? state.books : state.books.filter(b => b.status === state.filter);
-      const genreCounts = {};
-      base.forEach(b => { const g = genreOf(b); genreCounts[g] = (genreCounts[g] || 0) + 1; });
-      const genres = Object.keys(genreCounts).sort((a, b) => a.localeCompare(b, 'ja'));
-      if (state.genre !== 'all' && !genreCounts[state.genre]) state.genre = 'all';
-      const chip = (val, label, n) => `
-        <button data-genre="${esc(val)}" class="px-3 py-1 rounded-full text-xs whitespace-nowrap transition border ${state.genre === val ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'}">
-          ${esc(label)}${n !== undefined ? `<span class="ml-1 opacity-60">${n}</span>` : ''}
-        </button>`;
-      $('genre-chips').innerHTML = genres.length > 1 ? chip('all', 'すべてのジャンル') + genres.map(g => chip(g, g, genreCounts[g])).join('') : '';
+      const gc = {};
+      base.forEach(b => { const g = genreOf(b); gc[g] = (gc[g] || 0) + 1; });
+      if (state.genre !== 'all' && !gc[state.genre]) state.genre = 'all';
+      $('genre-chips').innerHTML = genreLinks(gc, state.genre, 'data-genre', 'すべてのジャンル');
 
-      document.querySelectorAll('.view-btn').forEach(b => {
-        const active = b.dataset.view === state.viewMode;
-        b.classList.toggle('bg-white', active);
-        b.classList.toggle('shadow-sm', active);
-        b.classList.toggle('text-stone-900', active);
-        b.classList.toggle('text-stone-400', !active);
-      });
+      document.querySelectorAll('.view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === state.viewMode));
       $('shelf-sort').value = state.sort;
       $('genre-list').innerHTML = [...new Set(state.books.map(genreOf))].map(g => `<option value="${esc(g)}">`).join('');
     }
 
+    function captionMeta(b) {
+      if (b.status === 'reading') return `<div class="meta"><span>Reading</span><span class="tabular-nums">${pct(b)}%</span></div><div class="progress-hair"><i style="width:${pct(b)}%"></i></div>`;
+      if (b.status === 'wish') return `<div class="meta"><span>Wish list</span></div>`;
+      const d = finishDate(b);
+      return `<div class="meta"><span class="tabular-nums">${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}</span>${b.genre && b.genre !== '未分類' ? `<span>·</span><span class="truncate">${esc(b.genre)}</span>` : ''}</div>`;
+    }
+
     function spineDim(b) {
       const pages = parseInt(b.pages, 10) || 250;
-      const w = clamp(Math.round(pages / 9), 18, 54);
-      const h = 158 + (hashStr(b.id) % 42);
-      return { w, h };
+      return { w: clamp(Math.round(pages / 9), 18, 52), h: 168 + (hashStr(b.id) % 40) };
     }
 
     function renderBookshelf() {
@@ -865,62 +862,55 @@
         container.innerHTML = '';
         $('empty-state').classList.replace('hidden', 'flex');
         if (!state.books.length) {
-          $('empty-title').textContent = '本棚は空です';
-          $('empty-text').innerHTML = state.isPortfolioMode ? 'まだ本が登録されていません。' : '右上の「本を追加」から、<br>あなたの本棚を作り始めましょう。';
+          $('empty-title').textContent = 'まだ展示がありません';
+          $('empty-text').textContent = state.isPortfolioMode ? 'この本棚にはまだ本が登録されていません。' : '「本を追加」から、最初の一冊を収蔵しましょう。';
         } else {
-          $('empty-title').textContent = '該当する本がありません';
+          $('empty-title').textContent = '該当する作品がありません';
           $('empty-text').textContent = '絞り込みや検索の条件を変えてみてください。';
         }
         return;
       }
       $('empty-state').classList.replace('flex', 'hidden');
+      const acc = accessionMap();
 
-      // 本棚の内側の幅(枠と余白を除く)
-      const inner = Math.max(240, container.clientWidth - 20 - 24 - 12);
-      const rows = [];
-
-      if (state.viewMode === 'cover') {
-        const itemW = window.innerWidth >= 640 ? 100 : 78;
-        const gap = window.innerWidth >= 640 ? 22 : 14;
-        const perRow = Math.max(2, Math.floor((inner + gap) / (itemW + gap)));
-        for (let i = 0; i < list.length; i += perRow) {
-          const items = list.slice(i, i + perRow).map(b => {
-            const pct = b.status === 'reading' && b.pages ? clamp(Math.round((b.currentPage || 0) / b.pages * 100), 0, 100) : null;
-            return `<div class="face" data-open="${esc(b.id)}" style="width:${itemW}px" tabindex="0" title="${esc(b.title)}">
-              ${coverHtml(b)}
-              ${b.status === 'reading' ? '<span class="ribbon" style="right:14%"></span>' : ''}
-              ${pct !== null ? `<div class="absolute left-1 right-1 bottom-1 h-1 rounded-full bg-black/25 overflow-hidden"><div class="h-full bg-white" style="width:${pct}%"></div></div>` : ''}
-            </div>`;
-          }).join('');
-          rows.push(`<div class="shelf" style="gap:${gap}px;padding-left:${gap / 2}px">${items}</div>`);
-        }
-      } else {
-        let row = [], used = 0;
-        for (const b of list) {
-          const d = spineDim(b);
-          if (row.length && used + d.w + 3 > inner) { rows.push(row); row = []; used = 0; }
-          row.push({ b, d });
-          used += d.w + 3;
-        }
-        if (row.length) rows.push(row);
-        for (let i = 0; i < rows.length; i++) {
-          rows[i] = `<div class="shelf">${rows[i].map(({ b, d }) => {
-            const c = colorFor(b);
-            const fs = d.w < 24 ? 10 : d.w < 34 ? 12 : 13;
-            return `<div class="spine" data-open="${esc(b.id)}" tabindex="0" style="width:${d.w}px;height:${d.h}px;background:${c.bg};color:${c.fg}" aria-label="${esc(b.title)}">
-              <span class="band" style="top:10px"></span><span class="band" style="bottom:12px"></span>
-              <div class="spine-title" style="font-size:${fs}px">${esc(b.title)}</div>
-              ${d.w >= 24 && b.author ? `<div class="spine-author">${esc(b.author)}</div>` : ''}
-              ${b.status === 'reading' ? '<span class="ribbon"></span>' : ''}
-              <div class="spine-pop">${coverHtml(b)}</div>
-            </div>`;
-          }).join('')}</div>`;
-        }
+      if (state.viewMode !== 'archive') {
+        container.innerHTML = `<div class="gallery">${list.map((b, i) => `
+          <figure class="work fade-in ${b.status === 'wish' ? 'is-wish' : ''}" data-open="${esc(b.id)}" tabindex="0" style="animation-delay:${Math.min(i, 16) * 35}ms">
+            <div class="work-frame">${coverHtml(b)}</div>
+            <figcaption class="caption">
+              <p class="no">${noStr(acc.get(b.id))}</p>
+              <h3>${esc(b.title)}</h3>
+              <p class="by">${esc(b.author || '—')}</p>
+              ${captionMeta(b)}
+            </figcaption>
+          </figure>`).join('')}</div>`;
+        return;
       }
-      container.innerHTML = `<div class="bookcase">${rows.join('')}</div>`;
+
+      // Archive:背表紙を細い展示台の上に並べる
+      const inner = Math.max(240, container.clientWidth - 8);
+      const rows = [];
+      let row = [], used = 0;
+      for (const b of list) {
+        const d = spineDim(b);
+        if (row.length && used + d.w + 2 > inner) { rows.push(row); row = []; used = 0; }
+        row.push({ b, d });
+        used += d.w + 2;
+      }
+      if (row.length) rows.push(row);
+      container.innerHTML = '<div class="pt-24">' + rows.map(r => `<div class="vitrine">${r.map(({ b, d }) => {
+        const c = colorFor(b);
+        const fs = d.w < 24 ? 10 : d.w < 34 ? 11.5 : 12.5;
+        return `<div class="spine ${b.status === 'wish' ? 'is-wish' : ''}" data-open="${esc(b.id)}" tabindex="0" style="width:${d.w}px;height:${d.h}px;background:${c.bg};color:${c.fg}" aria-label="${esc(b.title)}">
+          <div class="spine-title" style="font-size:${fs}px">${esc(b.title)}</div>
+          ${d.w >= 24 && b.author ? `<div class="spine-author">${esc(b.author)}</div>` : ''}
+          ${b.status === 'reading' ? '<span class="mark"></span>' : ''}
+          <div class="spine-pop">${coverHtml(b)}<p class="pop-cap">${esc(b.title)}</p></div>
+        </div>`;
+      }).join('')}</div>`).join('') + '</div>';
     }
 
-    // 本棚のイベント
+    // コレクションのイベント
     document.addEventListener('click', (e) => {
       const opener = e.target.closest('[data-open]');
       if (opener && !e.target.closest('#modal')) openDetail(opener.dataset.open);
@@ -939,11 +929,11 @@
     $('shelf-search').addEventListener('input', debounce((e) => { state.query = e.target.value; renderBookshelf(); }, 200));
     $('shelf-sort').addEventListener('change', (e) => { state.sort = e.target.value; safeLS.set('hondana_sort', state.sort); renderBookshelf(); });
     document.querySelectorAll('.view-btn').forEach(btn => btn.addEventListener('click', () => {
-      state.viewMode = btn.dataset.view; safeLS.set('hondana_view', state.viewMode); renderBookshelf();
+      state.viewMode = btn.dataset.view; safeLS.set('hondana_view2', state.viewMode); renderBookshelf();
     }));
     $('btn-add-book').addEventListener('click', () => openDetail(null));
 
-    /* ================= 本の詳細モーダル ================= */
+    /* ================= 本の詳細(作品ページ) ================= */
     const modalFields = ['detail-title', 'detail-author', 'detail-start', 'detail-end', 'detail-genre', 'detail-pages', 'detail-memo', 'detail-current', 'detail-current-range', 'detail-cover-url'];
 
     function draftBook() {
@@ -953,13 +943,7 @@
 
     function setDraftStatus(s) {
       state.draftStatus = s;
-      document.querySelectorAll('#status-seg [data-status]').forEach(b => {
-        const active = b.dataset.status === s;
-        b.classList.toggle('bg-white', active);
-        b.classList.toggle('shadow-sm', active);
-        b.classList.toggle('text-stone-900', active);
-        b.classList.toggle('text-stone-500', !active);
-      });
+      document.querySelectorAll('#status-seg [data-status]').forEach(b => b.classList.toggle('active', b.dataset.status === s));
       $('progress-block').classList.toggle('hidden', s !== 'reading');
       updateProgressUI();
     }
@@ -969,7 +953,7 @@
       const cur = clamp(parseInt($('detail-current').value, 10) || 0, 0, pages);
       $('detail-current-range').max = pages;
       $('detail-current-range').value = cur;
-      $('progress-label').textContent = `${Math.round(cur / pages * 100)}% (${cur}/${pages}p)`;
+      $('progress-label').textContent = `${Math.round(cur / pages * 100)}%  —  ${cur} / ${pages}`;
     }
 
     function renderStars() {
@@ -978,11 +962,12 @@
       for (let i = 1; i <= 5; i++) {
         const s = document.createElement('button');
         s.type = 'button';
-        s.className = i <= state.draftRating ? 'ph-fill ph-star text-amber-500' : 'ph ph-star text-stone-300 hover:text-amber-400';
-        s.setAttribute('aria-label', `${i}つ星`);
+        s.className = 'w-2 h-2 rounded-full transition ' + (i <= state.draftRating ? 'bg-[#141413]' : 'border border-[#bdbab3] hover:border-[#141413]');
+        s.setAttribute('aria-label', `評価 ${i}`);
+        s.title = `評価 ${i}`;
         s.addEventListener('click', () => {
           if (state.isPortfolioMode) return;
-          state.draftRating = state.draftRating === i ? 0 : i; // 同じ星をもう一度押すと解除
+          state.draftRating = state.draftRating === i ? 0 : i; // 同じ点をもう一度押すと解除
           renderStars();
         });
         box.appendChild(s);
@@ -994,10 +979,10 @@
       if (!state.selectedBookId) { wrap.classList.add('hidden'); return; }
       wrap.classList.remove('hidden');
       const list = state.phrases.filter(p => p.bookId === state.selectedBookId).sort((a, b) => (a.page || 0) - (b.page || 0));
-      $('detail-phrases-count').textContent = list.length ? `${list.length}件` : '';
+      $('detail-phrases-count').textContent = list.length ? String(list.length) : '';
       $('detail-phrases').innerHTML = list.length ? list.map(p => `
-        <div class="text-sm font-serif-jp leading-relaxed pl-3 border-l-2 border-amber-200 text-stone-700 whitespace-pre-wrap">${esc(p.text)}${p.page ? `<span class="text-[10px] text-stone-400 font-sans ml-2">p.${esc(p.page)}</span>` : ''}</div>
-      `).join('') : '<p class="text-xs text-stone-400">まだありません</p>';
+        <div class="text-[13px] font-serif-jp leading-loose whitespace-pre-wrap">${esc(p.text)}${p.page ? `<span class="label ml-3 !tracking-[.1em]">p.${esc(p.page)}</span>` : ''}</div>
+      `).join('') : '<p class="text-xs text-mute">まだありません</p>';
       $('detail-phrase-add').classList.toggle('hidden', state.isPortfolioMode);
     }
 
@@ -1005,6 +990,7 @@
       const b = id ? state.books.find(x => x.id === id) : null;
       if (id && !b) return;
       state.selectedBookId = b ? b.id : null;
+      $('detail-no').textContent = b ? noStr(accessionMap().get(b.id)) : 'New Acquisition';
       $('detail-title').value = b ? b.title : '';
       $('detail-author').value = b ? b.author : '';
       $('detail-start').value = b ? b.startDate : '';
@@ -1035,14 +1021,14 @@
       modal.classList.add('flex');
       document.body.style.overflow = 'hidden';
       requestAnimationFrame(() => modal.classList.add('modal-open'));
-      if (!b) setTimeout(() => $('detail-title').focus(), 50);
+      if (!b) setTimeout(() => $('detail-title').focus(), 60);
     }
 
     function closeModal() {
       const modal = $('modal');
       modal.classList.remove('modal-open');
       document.body.style.overflow = '';
-      setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 200);
+      setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 250);
     }
 
     $('btn-close-modal').addEventListener('click', closeModal);
@@ -1108,20 +1094,20 @@
 
       closeModal();
       renderAll();
-      showToast(existing ? '変更を保存しました' : '本棚に追加しました');
+      showToast(existing ? '変更を保存しました' : 'コレクションに加えました');
       await cloudSet('books', book.id, book);
     });
 
     $('btn-delete-book').addEventListener('click', async () => {
       const id = state.selectedBookId;
       const b = state.books.find(x => x.id === id);
-      if (!b || !confirm(`「${b.title}」を本棚から削除しますか？\n(この本のフレーズは「書籍未指定」として残ります)`)) return;
+      if (!b || !confirm(`「${b.title}」を削除しますか？\n(この本のフレーズは「出典未指定」として残ります)`)) return;
       state.books = state.books.filter(x => x.id !== id);
       const removedLinks = state.links.filter(l => l.source === id || l.target === id);
       state.links = state.links.filter(l => l.source !== id && l.target !== id);
       closeModal();
       renderAll();
-      showToast('本を削除しました');
+      showToast('削除しました');
       await cloudDelete('books', id);
       for (const l of removedLinks) await cloudDelete('links', linkId(l));
     });
@@ -1148,21 +1134,18 @@
       const sel = $('phrase-book-select');
       const cur = sel.value;
       const books = [...state.books].sort((a, b) => (a.status === 'reading' ? -1 : 0) - (b.status === 'reading' ? -1 : 0) || a.title.localeCompare(b.title, 'ja'));
-      sel.innerHTML = '<option value="">書籍を選択 (任意)</option>' +
-        books.map(b => `<option value="${esc(b.id)}">${b.status === 'reading' ? '📖 ' : ''}${esc(b.title)}</option>`).join('');
+      sel.innerHTML = '<option value="">書籍を選択(任意)</option>' +
+        books.map(b => `<option value="${esc(b.id)}">${b.status === 'reading' ? '— ' : ''}${esc(b.title)}</option>`).join('');
       if (books.some(b => b.id === cur)) sel.value = cur;
     }
 
-    const phraseGenre = (p) => { const b = state.books.find(x => x.id === p.bookId); return b ? genreOf(b) : '書籍未指定'; };
+    const phraseGenre = (p) => { const b = state.books.find(x => x.id === p.bookId); return b ? genreOf(b) : '出典未指定'; };
 
     function renderPhrases() {
-      // ジャンルの絞り込み
       const counts = {};
       state.phrases.forEach(p => { const g = phraseGenre(p); counts[g] = (counts[g] || 0) + 1; });
-      const genres = Object.keys(counts).sort((a, b) => a.localeCompare(b, 'ja'));
       if (state.phrasesGenre !== 'all' && !counts[state.phrasesGenre]) state.phrasesGenre = 'all';
-      const chip = (val, label, n) => `<button data-pgenre="${esc(val)}" class="px-3 py-1 rounded-full text-xs whitespace-nowrap transition border ${state.phrasesGenre === val ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'}">${esc(label)}<span class="ml-1 opacity-60">${n}</span></button>`;
-      $('phrase-chips').innerHTML = state.phrases.length ? chip('all', 'すべて', state.phrases.length) + genres.map(g => chip(g, g, counts[g])).join('') : '';
+      $('phrase-chips').innerHTML = genreLinks(counts, state.phrasesGenre, 'data-pgenre', 'すべて');
 
       let list = state.phrases.slice();
       if (state.phrasesGenre !== 'all') list = list.filter(p => phraseGenre(p) === state.phrasesGenre);
@@ -1182,30 +1165,27 @@
       }
       $('phrases-empty').classList.replace('flex', 'hidden');
 
-      container.innerHTML = list.map(p => {
+      container.innerHTML = list.map((p, i) => {
         const b = state.books.find(x => x.id === p.bookId);
-        const dateStr = new Date(p.addedAt || Date.now()).toLocaleDateString('ja-JP');
-        const bookHtml = b ? `
-          <button data-open="${esc(b.id)}" class="flex items-center gap-3 mt-4 hover:bg-stone-50 p-1.5 -ml-1.5 rounded-lg transition text-left">
-            <div class="w-7 shrink-0">${coverHtml(b)}</div>
-            <div class="min-w-0">
-              <div class="text-xs font-semibold truncate">${esc(b.title)}</div>
-              <div class="text-[11px] text-stone-400 truncate">${esc(b.author)}${p.page ? ` · p.${esc(p.page)}` : ''}</div>
-            </div>
-          </button>` : `<div class="mt-4 text-[11px] text-stone-400 flex items-center gap-1"><i class="ph ph-book"></i>書籍未指定${p.page ? ` · p.${esc(p.page)}` : ''}</div>`;
+        const d = new Date(p.addedAt || Date.now());
+        const dateStr = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+        const source = b
+          ? `<button data-open="${esc(b.id)}" class="hover:text-[#141413] transition text-left">${b.author ? esc(b.author) + '　' : ''}『${esc(b.title)}』</button>`
+          : '<span>出典未指定</span>';
         const actions = state.isPortfolioMode ? '' : `
-          <div class="absolute top-3 right-3 flex gap-1 md:opacity-0 md:group-hover:opacity-100 transition">
-            <button data-action="copy" data-id="${esc(p.id)}" class="w-8 h-8 rounded-full hover:bg-stone-100 text-stone-500" title="コピー"><i class="ph ph-copy"></i></button>
-            <button data-action="edit" data-id="${esc(p.id)}" class="w-8 h-8 rounded-full hover:bg-stone-100 text-stone-500" title="編集"><i class="ph ph-pencil-simple"></i></button>
-            <button data-action="delete" data-id="${esc(p.id)}" class="w-8 h-8 rounded-full hover:bg-red-50 text-red-500" title="削除"><i class="ph ph-trash"></i></button>
+          <div class="flex items-center gap-5 md:opacity-0 md:group-hover:opacity-100 transition">
+            <button data-action="copy" data-id="${esc(p.id)}" class="btn-text">Copy</button>
+            <button data-action="edit" data-id="${esc(p.id)}" class="btn-text">Edit</button>
+            <button data-action="delete" data-id="${esc(p.id)}" class="btn-text hover:!text-red-700">Delete</button>
           </div>`;
-        return `<article class="break-inside-avoid mb-5 bg-white p-6 pt-8 rounded-2xl border border-stone-200/70 relative group transition hover:shadow-md">
-          <i class="ph-fill ph-quotes absolute top-4 left-5 text-2xl text-amber-200"></i>
-          ${actions}
-          <p class="font-serif-jp text-[15px] leading-loose whitespace-pre-wrap relative">${esc(p.text)}</p>
-          <div class="flex items-end justify-between gap-2">
-            ${bookHtml}
-            <span class="text-[10px] text-stone-300 shrink-0">${dateStr}</span>
+        return `<article class="group grid grid-cols-[40px_minmax(0,1fr)] sm:grid-cols-[64px_minmax(0,1fr)] py-12 border-b hair">
+          <span class="label pt-1.5 tabular-nums">${String(i + 1).padStart(2, '0')}</span>
+          <div>
+            <p class="font-serif-jp text-[17px] sm:text-[19px] font-light leading-[2.1] tracking-[.04em] whitespace-pre-wrap">${esc(p.text)}</p>
+            <div class="mt-6 flex flex-wrap items-center justify-between gap-4">
+              <p class="text-[11px] text-mute tracking-wider">— ${source}${p.page ? `<span class="ml-3">p.${esc(p.page)}</span>` : ''}<span class="ml-3">${dateStr}</span></p>
+              ${actions}
+            </div>
           </div>
         </article>`;
       }).join('');
@@ -1214,7 +1194,7 @@
     function resetPhraseForm() {
       state.editingPhraseId = null;
       $('phrase-text').value = ''; $('phrase-page').value = '';
-      $('phrase-form-title').innerHTML = '<i class="ph-fill ph-quotes text-lg text-amber-700"></i> 新しいフレーズを記録';
+      $('phrase-form-title').textContent = 'New Fragment';
       $('btn-add-phrase').querySelector('span').textContent = '記録する';
       $('btn-cancel-phrase').classList.add('hidden');
     }
@@ -1232,7 +1212,7 @@
         $('phrase-book-select').value = p.bookId || '';
         $('phrase-page').value = p.page || '';
         $('phrase-text').value = p.text;
-        $('phrase-form-title').innerHTML = '<i class="ph ph-pencil-simple text-lg text-amber-700"></i> フレーズを編集';
+        $('phrase-form-title').textContent = 'Edit Fragment';
         $('btn-add-phrase').querySelector('span').textContent = '更新する';
         $('btn-cancel-phrase').classList.remove('hidden');
         $('phrase-form-container').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1278,30 +1258,25 @@
     /* ================= タブ ================= */
     function switchTab(tab) {
       state.activeTab = tab;
-      document.querySelectorAll('.tab-btn').forEach(b => {
-        const active = b.dataset.tab === tab;
-        b.classList.toggle('text-stone-900', active);
-        b.classList.toggle('border-stone-900', active);
-        b.classList.toggle('text-stone-400', !active);
-        b.classList.toggle('border-transparent', !active);
-      });
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
       document.querySelectorAll('.view').forEach(v => {
         const active = v.id === `view-${tab}`;
         v.classList.toggle('hidden', !active);
         v.classList.toggle('flex', active);
       });
       if (tab !== 'serendipity') stopSerendipity();
+      window.scrollTo({ top: 0 });
       if (tab === 'bookshelf') renderBookshelf();
       else setTimeout(refreshActiveTab, 30);
     }
     document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
 
     /* ================= 共有 ================= */
-    $('btn-share').addEventListener('click', async () => {
+    async function shareCollection() {
       if (!currentUser) { showToast('本棚を共有するにはログインしてください', 'error'); return; }
       if (!state.books.length) { showToast('共有する本がありません', 'error'); return; }
       if (!confirm('現在の本棚・感想メモ・フレーズを、リンクを知っている人が閲覧できる形で共有します。よろしいですか？')) return;
-      showToast('共有リンクを作成しています...', 'info');
+      showToast('共有リンクを作成しています…', 'info');
       try {
         const id = generateId() + generateId();
         let payload = {
@@ -1315,7 +1290,7 @@
         await setDoc(doc(db, 'portfolios', id), clean(payload));
         const url = location.href.split('?')[0] + '?portfolio=' + id;
         if (navigator.share && /iPhone|iPad|Android/i.test(navigator.userAgent)) {
-          try { await navigator.share({ title: 'hondana - 私の本棚', url }); return; } catch {}
+          try { await navigator.share({ title: 'hondana — my collection', url }); return; } catch {}
         }
         await navigator.clipboard.writeText(url);
         showToast('共有リンクをコピーしました');
@@ -1323,30 +1298,30 @@
         console.error(e);
         showToast('リンクの作成に失敗しました', 'error');
       }
-    });
+    }
+    $('btn-share').addEventListener('click', shareCollection);
+    $('btn-share-m').addEventListener('click', shareCollection);
 
-    /* ================= Knowledge Map ================= */
+    /* ================= Constellation ================= */
     const mapContainer = $('map-container');
-    let isDraggingMap = false, dragMoved = false, startX, startY, scrollLeft, scrollTop;
+    let isDraggingMap = false, startX, startY, scrollLeft, scrollTop;
+    const MAP_HINT = '本と本を線で結び、あなただけの星座を描きましょう。';
 
     $('btn-connect-mode').addEventListener('click', (e) => {
       state.isConnectMode = !state.isConnectMode;
       state.connectSourceId = null;
       const btn = e.currentTarget;
-      btn.classList.toggle('bg-amber-600', state.isConnectMode);
-      btn.classList.toggle('hover:bg-amber-500', state.isConnectMode);
-      btn.classList.toggle('bg-slate-800', !state.isConnectMode);
-      btn.querySelector('span').textContent = state.isConnectMode ? 'Connect: ON' : 'Connect: OFF';
+      btn.classList.toggle('active', state.isConnectMode);
+      btn.textContent = state.isConnectMode ? 'Connect — On' : 'Connect — Off';
       $('map-hint').textContent = state.isConnectMode
-        ? '結びたい本を2冊、順にタップしてください。線をタップすると消せます。'
-        : '本と本を線で結び、あなただけの「思考の星座」を描きましょう。';
+        ? '結びたい本を2冊、順に選んでください。線を選ぶと消せます。'
+        : MAP_HINT;
       renderMapping();
     });
 
-    const startDrag = (x, y) => { isDraggingMap = true; dragMoved = false; startX = x; startY = y; scrollLeft = mapContainer.scrollLeft; scrollTop = mapContainer.scrollTop; };
+    const startDrag = (x, y) => { isDraggingMap = true; startX = x; startY = y; scrollLeft = mapContainer.scrollLeft; scrollTop = mapContainer.scrollTop; };
     const moveDrag = (x, y) => {
       if (!isDraggingMap) return;
-      if (Math.abs(x - startX) + Math.abs(y - startY) > 4) dragMoved = true;
       mapContainer.scrollLeft = scrollLeft - (x - startX);
       mapContainer.scrollTop = scrollTop - (y - startY);
     };
@@ -1366,51 +1341,55 @@
       const content = $('map-content'), svg = $('map-svg'), nodes = $('map-nodes'), grid = $('map-grid');
       svg.innerHTML = ''; nodes.innerHTML = ''; grid.innerHTML = '';
       if (!state.books.length) {
-        grid.innerHTML = '<div class="absolute inset-0 flex items-center justify-center text-sm text-white/40 font-serif-jp">本を追加すると、ここに星座が現れます。</div>';
+        grid.innerHTML = '<div class="absolute inset-0 flex items-center justify-center text-sm text-mute font-serif-jp">本を追加すると、ここに星座が現れます。</div>';
         return;
       }
       const books = state.books.map(b => ({ ...b, g: genreOf(b), time: getBookTime(b) }));
       const genres = [...new Set(books.map(b => b.g))].sort((a, b) => a.localeCompare(b, 'ja'));
       const times = books.map(b => b.time);
-      const minT = Math.min(...times);
-      const range = Math.max(Math.max(...times) - minT, 1000 * 60 * 60 * 24 * 30);
-      const padX = 150, padY = 110, lane = 190;
+      const minT = Math.min(...times), maxT = Math.max(...times);
+      const range = Math.max(maxT - minT, 1000 * 60 * 60 * 24 * 30);
+      const padX = 160, padY = 110, lane = 200;
       const W = Math.max(1000, (mapContainer.clientWidth || 1000) * 1.5);
       const H = Math.max(600, genres.length * lane + padY * 2 - lane / 2);
       content.style.width = `${W}px`; content.style.height = `${H}px`;
 
-      // 背景の星
-      let stars = '', seed = 7;
-      const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-      for (let i = 0; i < 140; i++) {
-        const size = rnd() < 0.85 ? 1 : 2;
-        stars += `<div class="absolute rounded-full bg-white" style="left:${Math.round(rnd() * W)}px;top:${Math.round(rnd() * H)}px;width:${size}px;height:${size}px;opacity:${(0.15 + rnd() * 0.5).toFixed(2)}"></div>`;
+      // ジャンルの細い基準線と年の目盛り
+      let guides = genres.map((g, i) => {
+        const y = padY + i * lane;
+        return `<div class="absolute left-0 right-0 border-t border-dashed border-[#141413]/10" style="top:${y}px"></div>
+          <div class="absolute left-6 label" style="top:${y - 22}px">${esc(g)}</div>`;
+      }).join('');
+      const y0 = new Date(minT).getFullYear(), y1 = new Date(maxT).getFullYear();
+      for (let yr = y0; yr <= y1 + 1; yr++) {
+        const t = new Date(yr, 0, 1).getTime();
+        if (t < minT || t > minT + range) continue;
+        const x = padX + (t - minT) / range * (W - padX * 2);
+        guides += `<div class="absolute top-0 bottom-0 border-l border-[#141413]/10" style="left:${x}px"></div>
+          <div class="absolute label" style="left:${x + 8}px;top:16px">${yr}</div>`;
       }
-      grid.innerHTML = stars + genres.map((g, i) =>
-        `<div class="absolute left-6 text-[10px] font-medium text-white/35 tracking-widest" style="top:${padY + i * lane - 14}px">${esc(g)}</div>`).join('');
+      grid.innerHTML = guides;
 
       const coords = {};
       books.forEach(b => {
         const gi = genres.indexOf(b.g);
         let x = padX + (b.time - minT) / range * (W - padX * 2);
-        let y = padY + gi * lane + ((hashStr(b.id) % 110) - 55);
+        let y = padY + gi * lane + ((hashStr(b.id) % 100) - 50);
         for (let iter = 0; iter < 50; iter++) {
           let hit = false;
           for (const id in coords) {
             const dx = x - coords[id].x, dy = y - coords[id].y, dist = Math.hypot(dx, dy);
-            if (dist < 84) { hit = true; const a = dist === 0 ? (hashStr(b.id + iter) % 628) / 100 : Math.atan2(dy, dx); x += Math.cos(a) * 15; y += Math.sin(a) * 15; }
+            if (dist < 92) { hit = true; const a = dist === 0 ? (hashStr(b.id + iter) % 628) / 100 : Math.atan2(dy, dx); x += Math.cos(a) * 15; y += Math.sin(a) * 15; }
           }
           if (!hit) break;
         }
-        x = clamp(x, 40, W - 40); y = clamp(y, 40, H - 40);
+        x = clamp(x, 50, W - 50); y = clamp(y, 60, H - 60);
         coords[b.id] = { x, y };
         const isSrc = state.isConnectMode && state.connectSourceId === b.id;
         nodes.insertAdjacentHTML('beforeend', `
-          <div class="map-node absolute -translate-x-1/2 -translate-y-1/2 pointer-events-auto cursor-pointer group flex flex-col items-center gap-2 z-10 hover:z-50 transition ${isSrc ? 'scale-110 z-50' : 'hover:scale-110'}" style="left:${x}px;top:${y}px" data-id="${esc(b.id)}">
-            <div class="w-14 h-14 rounded-full overflow-hidden border-2 transition ${isSrc ? 'border-amber-300 ring-4 ring-amber-400/40 shadow-[0_0_24px_rgba(251,191,36,.7)]' : 'border-white/25 group-hover:border-white group-hover:shadow-[0_0_16px_rgba(255,255,255,.5)]'}">
-              <div class="w-full -mt-[25%]">${coverHtml(b)}</div>
-            </div>
-            <span class="text-[10px] font-medium text-white/70 group-hover:text-white truncate max-w-[120px] drop-shadow">${esc(b.title)}</span>
+          <div class="map-node absolute -translate-x-1/2 -translate-y-1/2 pointer-events-auto cursor-pointer group flex flex-col items-center z-10 hover:z-50" style="left:${x}px;top:${y}px" data-id="${esc(b.id)}">
+            <div class="w-10 transition duration-500 ${isSrc ? 'outline outline-1 outline-offset-4 outline-[#141413] -translate-y-1' : 'group-hover:-translate-y-1'} ${b.status === 'wish' ? 'grayscale opacity-50' : ''}">${coverHtml(b)}</div>
+            <span class="mt-2 text-[10px] font-serif-jp truncate max-w-[110px] ${isSrc ? '' : 'text-mute group-hover:text-[#141413]'}">${esc(b.title)}</span>
           </div>`);
       });
 
@@ -1422,7 +1401,7 @@
         const d = `M ${s.x} ${s.y} C ${cx} ${s.y}, ${cx} ${t.y}, ${t.x} ${t.y}`;
         const line = document.createElementNS(ns, 'path');
         line.setAttribute('d', d); line.setAttribute('fill', 'none');
-        line.setAttribute('stroke', 'rgba(255,255,255,0.3)'); line.setAttribute('stroke-width', '1.5');
+        line.setAttribute('stroke', 'rgba(20,20,19,.45)'); line.setAttribute('stroke-width', '0.8');
         line.style.pointerEvents = 'none';
         svg.appendChild(line);
         if (state.isConnectMode && !state.isPortfolioMode) {
@@ -1430,12 +1409,12 @@
           hit.setAttribute('d', d); hit.setAttribute('fill', 'none');
           hit.setAttribute('stroke', 'transparent'); hit.setAttribute('stroke-width', '14');
           hit.style.cursor = 'pointer';
-          hit.addEventListener('mouseenter', () => line.setAttribute('stroke', 'rgba(251,191,36,.9)'));
-          hit.addEventListener('mouseleave', () => line.setAttribute('stroke', 'rgba(255,255,255,0.3)'));
+          hit.addEventListener('mouseenter', () => { line.setAttribute('stroke', '#7a2a22'); line.setAttribute('stroke-width', '1.5'); });
+          hit.addEventListener('mouseleave', () => { line.setAttribute('stroke', 'rgba(20,20,19,.45)'); line.setAttribute('stroke-width', '0.8'); });
           hit.addEventListener('click', async () => {
             state.links = state.links.filter(l => !(l.source === link.source && l.target === link.target));
             renderMapping();
-            showToast('星座の線を消しました');
+            showToast('線を消しました');
             await cloudDelete('links', linkId(link));
           });
           svg.appendChild(hit);
@@ -1464,7 +1443,7 @@
 
     $('btn-export-map').addEventListener('click', async () => {
       if (!state.books.length) return;
-      showToast('画像を書き出しています...', 'info');
+      showToast('画像を書き出しています…', 'info');
       const content = $('map-content');
       const imgs = [...content.querySelectorAll('img')];
       const originals = imgs.map(i => i.src);
@@ -1479,12 +1458,12 @@
             img.src = await new Promise(r => { const fr = new FileReader(); fr.onloadend = () => r(fr.result); fr.readAsDataURL(blob); });
           } catch { img.style.visibility = 'hidden'; }
         }
-        const canvas = await html2canvas(content, { backgroundColor: '#090a0f', scale: Math.min(window.devicePixelRatio || 2, 2), useCORS: true });
+        const canvas = await html2canvas(content, { backgroundColor: '#f1efea', scale: Math.min(window.devicePixelRatio || 2, 2), useCORS: true });
         const a = document.createElement('a');
         a.download = `hondana_constellation_${Date.now()}.png`;
         a.href = canvas.toDataURL('image/png');
         a.click();
-        showToast('星座を画像として保存しました');
+        showToast('画像として保存しました');
       } catch (e) {
         console.error(e);
         showToast('画像の保存に失敗しました', 'error');
@@ -1506,20 +1485,20 @@
       $('serendipity-empty').classList.replace('flex', 'hidden');
       const W = container.clientWidth, H = container.clientHeight;
       canvas.width = W; canvas.height = H;
-      const maxCount = W < 640 ? 12 : 26;
+      const maxCount = W < 640 ? 10 : 22;
       const picks = [...state.phrases].sort(() => Math.random() - 0.5).slice(0, maxCount);
       picks.forEach(p => {
         const b = state.books.find(x => x.id === p.bookId);
         const el = document.createElement('div');
         el.className = 'floating-phrase';
         el.innerHTML = `<div class="floating-phrase-text">${esc(p.text)}</div>
-          <div class="floating-phrase-meta"><i class="ph ph-book-open"></i> ${esc(b ? b.title : '書籍未指定')}${p.page ? ` p.${esc(p.page)}` : ''}</div>`;
+          <div class="floating-phrase-meta">— ${esc(b ? '『' + b.title + '』' : '出典未指定')}${p.page ? ` p.${esc(p.page)}` : ''}</div>`;
         el.addEventListener('click', () => { if (b) openDetail(b.id); });
         el.addEventListener('mouseenter', () => el.dataset.hover = '1');
         el.addEventListener('mouseleave', () => el.dataset.hover = '');
         container.appendChild(el);
         const r = el.getBoundingClientRect();
-        const angle = Math.random() * Math.PI * 2, speed = 0.08 + Math.random() * 0.14;
+        const angle = Math.random() * Math.PI * 2, speed = 0.06 + Math.random() * 0.1;
         floating.push({
           el, w: r.width, h: r.height,
           x: Math.random() * Math.max(0, W - r.width), y: Math.random() * Math.max(0, H - r.height),
@@ -1542,20 +1521,20 @@
         last = time;
         ctx.clearRect(0, 0, W, H);
         for (const it of floating) {
-          if (it.el.dataset.hover) { it.el.style.transform = `translate(${it.x}px, ${it.y}px) scale(1.03)`; continue; }
+          if (it.el.dataset.hover) { it.el.style.transform = `translate(${it.x}px, ${it.y}px)`; continue; }
           it.x += it.vx * dt; it.y += it.vy * dt;
           if (it.x < 0) { it.x = 0; it.vx *= -1; } else if (it.x + it.w > W) { it.x = Math.max(0, W - it.w); it.vx *= -1; }
           if (it.y < 0) { it.y = 0; it.vy *= -1; } else if (it.y + it.h > H) { it.y = Math.max(0, H - it.h); it.vy *= -1; }
-          it.el.style.transform = `translate(${it.x}px, ${it.y + Math.sin(time / 2000 + it.phase) * 5}px)`;
+          it.el.style.transform = `translate(${it.x}px, ${it.y + Math.sin(time / 2400 + it.phase) * 4}px)`;
         }
-        ctx.lineWidth = 1.2;
+        ctx.lineWidth = 0.8;
         const reach = Math.min(340, W * 0.5);
         for (let i = 0; i < floating.length; i++) for (let j = i + 1; j < floating.length; j++) {
           const a = floating[i], b = floating[j];
           const ax = a.x + a.w / 2, ay = a.y + a.h / 2, bx = b.x + b.w / 2, by = b.y + b.h / 2;
           const dist = Math.hypot(ax - bx, ay - by);
           if (dist < reach) {
-            ctx.strokeStyle = `rgba(166, 120, 60, ${Math.pow(1 - dist / reach, 2) * 0.45})`;
+            ctx.strokeStyle = `rgba(20, 20, 19, ${Math.pow(1 - dist / reach, 2) * 0.35})`;
             ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
           }
         }
