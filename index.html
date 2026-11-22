@@ -9,7 +9,7 @@
   <title>hondana - デジタル読書記録＆本棚</title>
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=Noto+Serif+JP:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
   <style>
     :root {
@@ -19,7 +19,6 @@
       --mute: #8a8a8a;
       --line: rgba(17,17,17,.12);
       --sans: "Helvetica Neue", Helvetica, Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", sans-serif;
-      --serif: "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif;
       --ease: cubic-bezier(.65, 0, .35, 1);
     }
     html { -webkit-text-size-adjust: 100%; }
@@ -67,11 +66,10 @@
     /* ===== 表紙(自動の装丁) ===== */
     .cover { position: relative; aspect-ratio: 2 / 3; overflow: hidden; container-type: inline-size; background: var(--plinth); }
     .cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-    .gen-cover { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 11cqw 10cqw; }
-    .gen-cover .gc-title { font-size: 11cqw; line-height: 1.22; overflow-wrap: break-word; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
-    .gen-cover .gc-author { font-size: 5.6cqw; letter-spacing: .04em; opacity: .75; line-height: 1.4; }
-    .gen-cover .gc-pub { font-size: 4.6cqw; letter-spacing: .08em; text-transform: uppercase; opacity: .6; margin-top: 2cqw; }
-    .gen-cover::after { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 3%; background: linear-gradient(90deg, rgba(0,0,0,.14), rgba(0,0,0,0)); }
+    .gen-cover { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 10cqw 9cqw; }
+    .gen-cover .gc-title { font-size: 9.5cqw; font-weight: 500; line-height: 1.3; letter-spacing: .02em; overflow-wrap: break-word; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+    .gen-cover .gc-author { font-size: 5.6cqw; opacity: .6; line-height: 1.4; }
+    .gen-cover::after { content: ''; position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); }
 
     /* ===== Shelf(背表紙の棚) ===== */
     .shelf {
@@ -86,7 +84,7 @@
     }
     .bk-spine { position: absolute; inset: 0; transition: opacity .3s ease .09s, filter .3s; }
     .bk.is-wish:not(.open) .bk-spine { opacity: .32; filter: grayscale(1); }
-    .bk:not(.open):hover .bk-spine { filter: brightness(1.06); }
+    .bk:not(.open):hover .bk-spine { filter: brightness(.96); }
     .bk:focus-visible { outline: 1px solid var(--ink); outline-offset: 3px; }
     .bk-open { position: absolute; left: 0; bottom: 0; display: flex; opacity: 0; pointer-events: none; transition: opacity .25s ease; }
     .bk.open { flex-basis: var(--ow); width: var(--ow); height: var(--H); cursor: default; }
@@ -111,13 +109,10 @@
 
     .spine-face { position: absolute; inset: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
     .spine-face img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 2; }
-    .spine-face::after {
-      content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none;
-      background: linear-gradient(90deg, rgba(0,0,0,.12), rgba(255,255,255,.08) 16%, rgba(255,255,255,0) 42%, rgba(0,0,0,.04) 80%, rgba(0,0,0,.16));
-    }
+    .spine-face::after { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); }
     .sp-title, .sp-author { writing-mode: vertical-rl; text-orientation: mixed; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1; min-height: 0; }
     .sp-title { flex: 0 1 auto; }
-    .sp-author { flex-shrink: 0; opacity: .78; }
+    .sp-author { flex-shrink: 0; opacity: .6; }
     .sp-mark { position: absolute; left: 2px; right: 2px; text-align: center; line-height: 1.1; overflow: hidden; word-break: break-all; }
 
     /* ===== Gallery ===== */
@@ -579,64 +574,44 @@
     // 落ち着いた紙・布の色(ミニマルな展示向け)
     // 本物の背表紙のように、色と書体を本ごとに変える
     const PALETTE = [
-      { bg: '#f3f1ec', fg: '#111111' }, { bg: '#111111', fg: '#f3f1ec' }, { bg: '#e04e2c', fg: '#ffffff' },
-      { bg: '#f28a1d', fg: '#111111' }, { bg: '#c8202f', fg: '#ffffff' }, { bg: '#1f4e9c', fg: '#ffffff' },
-      { bg: '#2c8c7a', fg: '#ffffff' }, { bg: '#ecc94b', fg: '#111111' }, { bg: '#d3d4cf', fg: '#111111' },
-      { bg: '#7b6f5d', fg: '#f6f0e4' }, { bg: '#fbfbf8', fg: '#c8202f' }, { bg: '#2f3247', fg: '#f2efe2' },
-      { bg: '#a8b48f', fg: '#1d2717' }, { bg: '#f2c4c6', fg: '#7a1f2b' }, { bg: '#5a3f31', fg: '#f3e8da' },
-      { bg: '#ffffff', fg: '#111111' }, { bg: '#9cc3d5', fg: '#0f2a3a' }, { bg: '#3e5c3a', fg: '#eef0df' }
+      { bg: '#f3f2ee', fg: '#111111' }, { bg: '#e6e4de', fg: '#111111' }, { bg: '#d6d3cb', fg: '#111111' },
+      { bg: '#ffffff', fg: '#111111' }, { bg: '#c4bfb4', fg: '#111111' }, { bg: '#8c877d', fg: '#ffffff' },
+      { bg: '#55524c', fg: '#f3f2ee' }, { bg: '#2a2927', fg: '#f3f2ee' }, { bg: '#111111', fg: '#f3f2ee' }
     ];
     const SANS = `'Helvetica Neue', Helvetica, Arial, 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif`;
-    const SERIF = `'Noto Serif JP', 'Hiragino Mincho ProN', 'Yu Mincho', serif`;
-    const VARIANTS = [
-      { font: SANS, weight: 800, k: .6, ls: -.01, latin: .62, upper: true },
-      { font: SERIF, weight: 500, k: .44, ls: .08, latin: .56 },
-      { font: SANS, weight: 300, k: .4, ls: .16, latin: .6 },
-      { font: SANS, weight: 700, k: .46, ls: .02, latin: .62, band: true }
-    ];
+    const V0 = { font: SANS, weight: 500, k: .4, ls: .04, latin: .6 };
     function bookStyle(b) {
       const h = hashStr((b.title || '') + '|' + (b.author || ''));
-      const c = PALETTE[h % PALETTE.length];
-      const V = VARIANTS[(h >> 5) % VARIANTS.length];
-      return { ...c, V };
+      return { ...PALETTE[h % PALETTE.length], V: V0 };
     }
     const colorFor = (b) => { const st = bookStyle(b); return { bg: st.bg, fg: st.fg }; };
     const isWide = (ch) => /[　-鿿豈-﫿＀-￯]/.test(ch);
     const textEm = (str, latin = .6) => { let e = 0; for (const ch of String(str)) e += isWide(ch) ? 1 : ch === ' ' ? .3 : latin; return e; };
 
     function coverHtml(b, extraClass = '') {
-      const st = bookStyle(b), V = st.V;
+      const st = bookStyle(b);
       const img = b.coverUrl ? `<img src="${esc(b.coverUrl)}" alt="" loading="lazy" onerror="this.remove()">` : '';
-      const title = V.upper ? String(b.title || '無題').toUpperCase() : (b.title || '無題');
-      const band = V.band ? `box-shadow: inset 0 9cqw 0 ${st.fg};padding-top:19cqw;` : '';
       return `<div class="cover ${extraClass}">
-        <div class="gen-cover" style="background:${st.bg};color:${st.fg};font-family:${V.font};${band}">
-          <div class="gc-title" style="font-weight:${V.weight};letter-spacing:${Math.min(V.ls, .03)}em">${esc(title)}</div>
-          <div><div class="gc-author">${esc(b.author || '')}</div>${b.publisher ? `<div class="gc-pub">${esc(b.publisher)}</div>` : ''}</div>
+        <div class="gen-cover" style="background:${st.bg};color:${st.fg}">
+          <div class="gc-title">${esc(b.title || '無題')}</div>
+          <div class="gc-author">${esc(b.author || '')}</div>
         </div>${img}</div>`;
     }
 
     // 背表紙(写真があれば写真、なければ自動で装丁)
     function spineHtml(b, w, h) {
       const st = bookStyle(b), V = st.V;
-      const title = V.upper ? String(b.title || '無題').toUpperCase() : String(b.title || '無題');
-      const hasAuthor = !!b.author && w >= 22;
-      const pad = Math.round(clamp(w * .32, 8, 16)) + (V.band ? Math.round(h * .12) : 0);
-      const afs = clamp(w * .2, 7, 10.5);
-      const authorLen = hasAuthor ? Math.min(h * .3, textEm(b.author) * afs * 1.05 + 4) : 0;
-      const markH = b.publisher ? 22 : 12;
-      const avail = h - pad - 10 - authorLen - markH - (hasAuthor ? 10 : 0);
-      const em = textEm(title, V.latin) + [...title].length * Math.max(0, V.ls);
-      const fs = Math.max(7.5, Math.min(w * V.k, avail / Math.max(1, em)));
-      const markFs = clamp(w * .15, 5.5, 8);
-      const mark = b.publisher
-        ? `<div class="sp-mark" style="bottom:7px;font-size:${markFs}px;max-height:${markFs * 2.3}px;font-weight:600;letter-spacing:.02em">${esc(b.publisher)}</div>`
-        : `<div class="sp-mark" style="bottom:8px"><span style="display:inline-block;width:4px;height:4px;border-radius:50%;background:currentColor;opacity:.7"></span></div>`;
-      return `<div class="spine-face" style="background:${st.bg};color:${st.fg};font-family:${V.font};padding-top:${pad}px">
-        ${V.band ? `<div style="position:absolute;left:0;right:0;top:0;height:${Math.round(h * .12)}px;background:${st.fg}"></div>` : ''}
+      const title = String(b.title || '無題');
+      const hasAuthor = !!b.author && w >= 26;
+      const pad = Math.round(clamp(w * .38, 10, 16));
+      const afs = clamp(w * .2, 7.5, 9.5);
+      const authorLen = hasAuthor ? Math.min(h * .28, textEm(b.author) * afs + 4) : 0;
+      const avail = h - pad * 2 - authorLen - (hasAuthor ? 12 : 0);
+      const em = textEm(title, V.latin) + [...title].length * V.ls;
+      const fs = Math.max(8, Math.min(w * V.k, 15, avail / Math.max(1, em)));
+      return `<div class="spine-face" style="background:${st.bg};color:${st.fg};padding:${pad}px 0">
         <div class="sp-title" style="font-size:${fs}px;font-weight:${V.weight};letter-spacing:${V.ls}em;max-height:${Math.max(20, avail)}px">${esc(title)}</div>
-        ${hasAuthor ? `<div class="sp-author" style="font-size:${afs}px;margin-top:10px;max-height:${authorLen}px">${esc(b.author)}</div>` : ''}
-        ${mark}
+        ${hasAuthor ? `<div class="sp-author" style="font-size:${afs}px;margin-top:auto;max-height:${authorLen}px">${esc(b.author)}</div>` : ''}
         ${b.spineUrl ? `<img src="${esc(b.spineUrl)}" alt="" loading="lazy" onerror="this.remove()">` : ''}
       </div>`;
     }
@@ -2108,12 +2083,12 @@
     }
 
     function posterCover(b, w, img) {
-      const st = bookStyle(b), c = st, V = st.V, h = w * 1.5, fs = w * (V.upper ? 0.11 : 0.1);
-      const ptitle = V.upper ? String(b.title).toUpperCase() : b.title;
+      const st = bookStyle(b), c = st, V = st.V, h = w * 1.5, fs = w * 0.095;
+      const ptitle = b.title;
       const text = w >= 54 ? `
-        <div style="position:absolute;left:${w * .12}px;right:${w * .12}px;top:${w * (V.band ? .2 : .11)}px;font-family:${V.font};font-size:${fs}px;line-height:${fs * 1.3}px;font-weight:${V.weight};max-height:${fs * 1.3 * 6}px;overflow:hidden;overflow-wrap:anywhere">${esc(ptitle)}</div>
-        <div style="position:absolute;left:${w * .12}px;right:${w * .12}px;bottom:${w * .1}px;font-family:${V.font};font-size:${fs * .55}px;line-height:${fs * 1.1}px;height:${fs * 1.1}px;opacity:.75;white-space:nowrap;overflow:hidden">${esc(b.author || '')}</div>` : '';
-      const bandEl = V.band && w >= 54 ? `<div style="position:absolute;left:0;right:0;top:0;height:${w * .09}px;background:${c.fg}"></div>` : '';
+        <div style="position:absolute;left:${w * .12}px;right:${w * .12}px;top:${w * .1}px;font-family:${V.font};font-size:${fs}px;line-height:${fs * 1.3}px;font-weight:${V.weight};max-height:${fs * 1.3 * 6}px;overflow:hidden;overflow-wrap:anywhere">${esc(ptitle)}</div>
+        <div style="position:absolute;left:${w * .12}px;right:${w * .12}px;bottom:${w * .1}px;font-family:${V.font};font-size:${fs * .58}px;line-height:${fs * 1.1}px;height:${fs * 1.1}px;opacity:.6;white-space:nowrap;overflow:hidden">${esc(b.author || '')}</div>` : '';
+      const bandEl = '';
       const photo = img ? `<div style="position:absolute;inset:0;background-image:url('${img}');background-size:cover;background-position:center"></div>` : '';
       const sh = Math.max(6, w * .07);
       return `<div style="position:relative;width:${w}px;height:${h}px">
