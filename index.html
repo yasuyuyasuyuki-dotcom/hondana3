@@ -19,7 +19,7 @@
       --mute: #8a8a8a;
       --line: rgba(17,17,17,.12);
       --sans: "Helvetica Neue", Helvetica, Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", sans-serif;
-      --ease: cubic-bezier(.65, 0, .35, 1);
+      --ease: cubic-bezier(.25, .1, .25, 1);
     }
     html { -webkit-text-size-adjust: 100%; }
     body {
@@ -69,7 +69,7 @@
     .gen-cover { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 10cqw 9cqw; }
     .gen-cover .gc-title { font-size: 9.5cqw; font-weight: 500; line-height: 1.3; letter-spacing: .02em; overflow-wrap: break-word; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
     .gen-cover .gc-author { font-size: 5.6cqw; opacity: .6; line-height: 1.4; }
-    .gen-cover::after { content: ''; position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); }
+    .gen-cover::after { content: ''; position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 0 1px rgba(17,17,17,.16); }
 
     /* ===== Shelf(背表紙の棚) ===== */
     .shelf {
@@ -80,16 +80,17 @@
     .shelf::-webkit-scrollbar { display: none; }
     .bk {
       position: relative; flex: 0 0 var(--w); width: var(--w); height: var(--h); cursor: pointer; outline: none;
-      transition: flex-basis .76s var(--ease) .09s, width .76s var(--ease) .09s, height .76s var(--ease) .09s;
+      transition: flex-basis .7s var(--ease), width .7s var(--ease), height .7s var(--ease);
     }
-    .bk-spine { position: absolute; inset: 0; transition: opacity .3s ease .09s, filter .3s; }
-    .bk.is-wish:not(.open) .bk-spine { opacity: .32; filter: grayscale(1); }
-    .bk:not(.open):hover .bk-spine { filter: brightness(.96); }
+    .bk-spine { position: absolute; inset: 0; transition: opacity .45s ease; }
+    .bk.is-wish:not(.open) .sp-title, .bk.is-wish:not(.open) .sp-author { opacity: .35; }
+    .bk:not(.open):hover .spine-face { background: #f3f3f3 !important; }
+    .spine-face { transition: background .2s ease; }
     .bk:focus-visible { outline: 1px solid var(--ink); outline-offset: 3px; }
-    .bk-open { position: absolute; left: 0; bottom: 0; display: flex; opacity: 0; pointer-events: none; transition: opacity .25s ease; }
+    .bk-open { position: absolute; left: 0; bottom: 0; display: flex; opacity: 0; pointer-events: none; transition: opacity .3s ease; }
     .bk.open { flex-basis: var(--ow); width: var(--ow); height: var(--H); cursor: default; }
     .bk.open .bk-spine { opacity: 0; transition-delay: 0s; }
-    .bk.open .bk-open { opacity: 1; pointer-events: auto; transition: opacity .55s ease .5s; }
+    .bk.open .bk-open { opacity: 1; pointer-events: auto; transition: opacity .6s ease .25s; }
     .bk-cover { flex-shrink: 0; cursor: pointer; }
     .bk-cover .cover { height: 100%; aspect-ratio: auto; }
     .bk-info { display: flex; flex-direction: column; min-width: 0; height: 100%; overflow-y: auto; scrollbar-width: none; }
@@ -109,7 +110,7 @@
 
     .spine-face { position: absolute; inset: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
     .spine-face img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 2; }
-    .spine-face::after { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); }
+    .spine-face::after { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; box-shadow: inset 0 0 0 1px rgba(17,17,17,.16); }
     .sp-title, .sp-author { writing-mode: vertical-rl; text-orientation: mixed; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1; min-height: 0; }
     .sp-title { flex: 0 1 auto; }
     .sp-author { flex-shrink: 0; opacity: .6; }
@@ -573,11 +574,7 @@
 
     // 落ち着いた紙・布の色(ミニマルな展示向け)
     // 本物の背表紙のように、色と書体を本ごとに変える
-    const PALETTE = [
-      { bg: '#f3f2ee', fg: '#111111' }, { bg: '#e6e4de', fg: '#111111' }, { bg: '#d6d3cb', fg: '#111111' },
-      { bg: '#ffffff', fg: '#111111' }, { bg: '#c4bfb4', fg: '#111111' }, { bg: '#8c877d', fg: '#ffffff' },
-      { bg: '#55524c', fg: '#f3f2ee' }, { bg: '#2a2927', fg: '#f3f2ee' }, { bg: '#111111', fg: '#f3f2ee' }
-    ];
+    const PALETTE = [{ bg: '#ffffff', fg: '#111111' }];
     const SANS = `'Helvetica Neue', Helvetica, Arial, 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif`;
     const V0 = { font: SANS, weight: 500, k: .4, ls: .04, latin: .6 };
     function bookStyle(b) {
@@ -1057,7 +1054,7 @@
 
     // ----- 引き出しの開閉 -----
     let shelfOpenId = null, hoverTimer = null, leaveTimer = null;
-    const easeInOut = (t) => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    const easeInOut = (t) => 1 - Math.pow(1 - t, 3);
     function animateShelfScroll(sh, el) {
       let target = 0;
       if (el) {
@@ -1075,7 +1072,7 @@
       }
       const from = sh.scrollLeft;
       if (Math.abs(target - from) < 1) return;
-      const t0 = performance.now() + 90, dur = 760;
+      const t0 = performance.now(), dur = 700;
       const step = (now) => {
         const t = clamp((now - t0) / dur, 0, 1);
         sh.scrollLeft = from + (target - from) * easeInOut(t);
@@ -1158,22 +1155,28 @@
       const bk = e.target.closest('.bk');
       if (!bk || e.target.closest('[data-open]')) return;
       clearTimeout(hoverTimer);
-      if (bk.classList.contains('open')) { if (!canHover && e.target.closest('.bk-spine')) setShelfOpen(null); return; }
+      if (bk.classList.contains('open')) return;
       setShelfOpen(bk.dataset.bk);
     });
     $('bookshelf-container').addEventListener('mouseover', (e) => {
       if (!canHover || state.viewMode !== 'shelf') return;
       const bk = e.target.closest('.bk');
       clearTimeout(hoverTimer);
-      if (!bk) { clearTimeout(leaveTimer); leaveTimer = setTimeout(() => setShelfOpen(null), 420); return; }
+      if (!bk) { clearTimeout(leaveTimer); leaveTimer = setTimeout(() => setShelfOpen(null), 600); return; }
       clearTimeout(leaveTimer);
       if (bk.dataset.bk === shelfOpenId) return;
-      hoverTimer = setTimeout(() => setShelfOpen(bk.dataset.bk), shelfOpenId ? 260 : 140);
+      // カーソルが通り過ぎただけでは開かないよう、少し留まってから開く
+      hoverTimer = setTimeout(() => setShelfOpen(bk.dataset.bk), shelfOpenId ? 450 : 320);
     });
     $('bookshelf-container').addEventListener('mouseleave', () => {
       if (!canHover) return;
       clearTimeout(hoverTimer); clearTimeout(leaveTimer);
-      leaveTimer = setTimeout(() => setShelfOpen(null), 420);
+      leaveTimer = setTimeout(() => setShelfOpen(null), 600);
+    });
+    // 棚の外をクリックすると閉じる
+    document.addEventListener('click', (e) => {
+      if (!shelfOpenId || e.target.closest('.bk') || e.target.closest('#modal')) return;
+      setShelfOpen(null);
     });
     $('status-filters').addEventListener('click', (e) => {
       const b = e.target.closest('[data-filter]'); if (!b) return;
@@ -1307,6 +1310,7 @@
       if (e.key !== 'Escape') return;
       if (!$('export-modal').classList.contains('hidden')) closeExport();
       else if (!$('modal').classList.contains('hidden')) closeModal();
+      else if (shelfOpenId) setShelfOpen(null);
     });
 
     $('detail-title').addEventListener('input', updateCoverPreview);
